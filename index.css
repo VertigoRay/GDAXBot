@@ -1,0 +1,52 @@
+body {
+	background: linear-gradient(to bottom right, #00853E, #004420);
+	color: white;
+	font-family: Arial, Helvetica, sans-serif;
+	/*font-family: "Comic Sans MS", cursive, sans-serif;*/
+}
+
+div#footer {
+	margin: 50px;
+	font-size: 10px;
+	font-style: italic;
+	text-align: center;
+}
+
+div#header img {
+	clear: left;
+	float: left;
+	height: 100px;
+}
+
+div#header div#contact-us {
+	height: 100px;
+	font-family: "Arial Black", Gadget, sans-serif;
+	font-size: 15px;
+	padding: 10px;
+	text-align: right;
+}
+
+div#header div#contact-us span#call {
+	font-size: 20px;
+}
+
+div#header div#contact-us span#online {
+	font-size: 20px;
+}
+
+div#header div#contact-us span#online a {
+	color: white;
+	text-decoration: none;
+}
+
+div#header div#contact-us span#online a:hover {
+	color: #DDD;
+	text-decoration: none;
+}
+
+div.modules {
+	background: linear-gradient(to bottom right, #777, #222); /* Standard syntax */
+	border-radius: 25px;
+	box-shadow: 10px 10px 20px #000;
+	padding: 10px;
+}

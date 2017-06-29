@@ -1,0 +1,25 @@
+{
+  "name": "gdax-trader",
+  "version": "0.1.0",
+  "description": "GDAX Automated Trading",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/vertigoray/gdax",
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial",
+    "demo"
+  ],
+  "author": "VertigoRay",
+  "license": "",
+  "devDependencies": {
+    "electron": "~1.6.2"
+  },
+  "dependencies": {
+    "gdax": "~0.4.2"
+  }
+}
