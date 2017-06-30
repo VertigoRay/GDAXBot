@@ -30,6 +30,7 @@ div#card {
 	background: linear-gradient(to bottom right, #777, #222); /* Standard syntax */
 	border-radius: 25px;
 	box-shadow: 10px 10px 20px #000;
+	margin: 20px;
 	padding: 10px;
 }
 

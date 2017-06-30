@@ -9,7 +9,7 @@ var pubBTCUSDClient = new Gdax.PublicClient('BTC-USD', 'https://api.gdax.com');
 
 
 function updateCard (data) {
-    var div = $('<div class="last_trade"><table><tr><th>Trade Size</th><th>Price (USD)</th><th>Time</th></tr><tr><td><span id="trade_size" class="trade_size"></span></td><td><span id="price" class="price"></span></td><td><span id="time" class="time"></span></td></tr></table></div><h1>'+ data.product_id +'</h1>');
+    var div = $('<table><tr><th>Trade Size</th><th>Price (USD)</th><th>Time</th></tr><tr><td><span id="trade_size" class="trade_size"></span></td><td><span id="price" class="price"></span></td><td><span id="time" class="time"></span></td></tr></table>');
 
     // div.find('h1').text('BAR');
 
@@ -25,7 +25,7 @@ function updateCard (data) {
         .text(('0'+ date.getHours()).slice(-2) +':'+ ('0'+ date.getMinutes()).slice(-2) +':'+ ('0'+ date.getSeconds()).slice(-2))
         .css('color', 'gray');
 
-    $('.'+ data.product_id).html(div);
+    $('#'+ data.product_id +'last_trade').html(div);
 }
 
 
@@ -56,6 +56,11 @@ var callback = function(err, response, data) {
         console.log(data);
     }
 };
+
+
+function historic(){
+    ge
+}
 
 
 
