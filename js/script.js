@@ -9,10 +9,21 @@ var pubBTCUSDClient = new Gdax.PublicClient('BTC-USD', 'https://api.gdax.com');
 
 
 function updateCard (data) {
-    var div = $('<h1>'+ data.product_id +'</h1>');
+    var div = $('<div class="last_trade"><table><tr><th>Trade Size</th><th>Price (USD)</th><th>Time</th></tr><tr><td><span id="trade_size" class="trade_size"></span></td><td><span id="price" class="price"></span></td><td><span id="time" class="time"></span></td></tr></table></div><h1>'+ data.product_id +'</h1>');
 
-    div.append('<p>Last Trade Price: '+ data.price +'</p>');
-    div.append('<p>Last Trade Size:  '+ data.size +'</p>');
+    // div.find('h1').text('BAR');
+
+    div.find('span#trade_size').text(data.size);
+
+    div.find('span#price')
+        .text(parseFloat(data.price).toFixed(2))
+        .css('color', (data.side === 'sell' ? 'red' : 'green'))
+        .css('font-weight', 'bold');
+
+    var date = new Date(data.time);
+    div.find('span#time')
+        .text(('0'+ date.getHours()).slice(-2) +':'+ ('0'+ date.getMinutes()).slice(-2) +':'+ ('0'+ date.getSeconds()).slice(-2))
+        .css('color', 'gray');
 
     $('.'+ data.product_id).html(div);
 }

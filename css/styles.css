@@ -37,6 +37,22 @@ div#card h1 {
 	font: 17px/1.5 Arial, Helvetica, sans-serif;
 }
 
+div#card div.last_trade {
+	clear:right;
+	display:block;
+	float:right;
+	font: 10px/1.5 Arial, Helvetica, sans-serif;
+	white-space: nowrap;
+}
+
+div#card div.last_trade td {
+	padding: 0px 10px;
+}
+
+div#card div.last_trade span.price {
+	font-weight: bold;
+}
+
 /* Stats */
 
 footer {
