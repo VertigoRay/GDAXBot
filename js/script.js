@@ -17,7 +17,7 @@ function updateCard (data) {
 
     div.find('span#price')
         .text(parseFloat(data.price).toFixed(2))
-        .css('color', (data.side === 'sell' ? 'red' : 'green'))
+        .css('color', (data.side === 'sell' ? 'green' : 'red'))
         .css('font-weight', 'bold');
 
     var date = new Date(data.time);
