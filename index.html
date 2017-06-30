@@ -1,52 +1,39 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="index.css">
-    <title>GDAX Trader</title>
-    <script type="text/javascript">
-      const {shell} = require('electron');
-      const {wmi} = require('node-wmi');
-    </script>
-  </head>
-  <body>
-    <div id="header">
-      GDAX Trader
-      <div id="config">
-        <form>
-        </form>
-      </div>
-    </div>
-    <div class="modules">
-      <h1>BTC</h1>
-      <p>
-        You're on a <script>wmi.</script> <script></script> (SN: <script></script>);
-        running (<script>document.write(process.platform)</script>).
-      </p>
-    </div>
-    <div class="modules">
-      <h1>ETH</h1>
-      <p>
-        You're on a <script>wmi.</script> <script></script> (SN: <script></script>);
-        running (<script>document.write(process.platform)</script>).
-      </p>
-    </div>
-    <div class="modules">
-      <h1>LTC</h1>
-      <p>
-        You're on a <script>wmi.</script> <script></script> (SN: <script></script>);
-        running (<script>document.write(process.platform)</script>).
-      </p>
-    </div>
-    <div id="footer">
-      Node.js <script>document.write(process.versions.node)</script>,
-      Chromium <script>document.write(process.versions.chrome)</script>,
-      and Electron <script>document.write(process.versions.electron)</script>.
-    </div>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <script>
-    // You can also require other files to run in this process
-    require('./renderer.js')
-  </script>
+  <title>GDAX Trader</title>
+
+  <!-- <link rel="stylesheet" href="./css/jquery.flipster.min.css"> -->
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+<header>
+  <h1>GDAX Trader</h1>
+  <p class="error"></p>
+</header>
+
+<div class="cards">
+  <div id="card" class="BTC-USD">
+
+  </div>
+  <div id="card" class="ETH-USD">
+
+  </div>
+  <div id="card" class="LTC-USD">
+
+  </div>
+</div>
+
+<footer>
+   <p class="status"></p>
+   <p class="stats"></p>
+</footer>
+
+<script>window.$ = window.jQuery = require('./js/jquery.min.js');</script>
+<!--  <script src="./js/jquery.flipster.min.js"></script> -->
+<script src="./js/script.js"></script>
+</body>
 </html>

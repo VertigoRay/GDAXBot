@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://github.com/vertigoray/gdax",
+  "repository": "https://github.com/VertigoRay/GDAX",
   "keywords": [
     "Electron",
     "quick",
@@ -20,6 +20,7 @@
     "electron": "~1.6.2"
   },
   "dependencies": {
-    "gdax": "~0.4.2"
+    "gdax": "~0.4.2",
+    "pretty-bytes": "^2.0.1"
   }
 }
