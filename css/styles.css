@@ -65,6 +65,21 @@ footer {
 
 }
 
+header div#settings {
+	clear: right;
+	float: right;
+	font-size: 10px;
+	line-height: 12px;
+	text-align: right;
+}
+
+header div#settings input {
+	font-size: 10px;
+	line-height: 12px;
+	text-align: right;
+	width: 20px;
+}
+
 .status {
 	text-align: center;
 	color: #8C91A0;

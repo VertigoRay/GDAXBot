@@ -6,11 +6,6 @@ var os = require('os');
 var prettyBytes = require('pretty-bytes');
 const settings = require('electron-settings');
 
-var websocket = new Gdax.WebsocketClient(['BTC-USD', 'ETH-USD', 'LTC-USD']);
-var pubBTCUSDClient = new Gdax.PublicClient('BTC-USD', 'https://api.gdax.com');
-var pubETHUSDClient = new Gdax.PublicClient('ETH-USD', 'https://api.gdax.com');
-var pubLTCUSDClient = new Gdax.PublicClient('LTC-USD', 'https://api.gdax.com');
-
 var averages = {
     'long': {
         'BTC-USD': [],
@@ -42,6 +37,15 @@ var varShouldBuy = {
     'ETH-USD': null,
     'LTC-USD': null,
 };
+
+var trigger = {
+    'BTC-USD': [],
+    'ETH-USD': [],
+    'LTC-USD': [],
+};
+
+var orders = [];
+var lastFill = null;
 
 
 function isTrendingUp(s_or_l, product_id, price) {
@@ -80,20 +84,39 @@ function isTrendingUp(s_or_l, product_id, price) {
 
 
 function shouldBuy(product_id) {
-    if (varIsTrendingUp['short'][product_id]) {
-        return true;
+    if (settings.get(product_id +'_buy_on_trend_long_up') && settings.get(product_id +'_buy_on_trend_short_up')) {
+        // Buy only on trend up, BOTH
+        return (varIsTrendingUp['long'][product_id] && varIsTrendingUp['short'][product_id]) ? true : false
+    } else if (settings.get(product_id +'_buy_on_trend_long_up')) {
+        // Buy only on trend up, LONG
+        return (varIsTrendingUp['long'][product_id]) ? true : false
+    } else if (settings.get(product_id +'_buy_on_trend_short_up')) {
+        // Buy only on trend up, SHORT
+        return (varIsTrendingUp['short'][product_id]) ? true : false
+    } else {
+        // Always buy
+        return true
     }
 }
 
 
 
 function loadConfig() {
-    ['BTC-USD', 'ETH-USD', 'LTC-USD'].forEach(function(product_id) {
+    ['Account', 'BTC-USD', 'ETH-USD', 'LTC-USD'].forEach(function(product_id) {
         $($('form#'+ product_id).prop('elements')).each(function () {
-            if (settings.has(this.id)) {
-                this.value = settings.get(this.id);
+            if (this.type === 'checkbox') {
+                if (settings.has(this.id)) {
+                    this.checked = settings.get(this.id);
+                } else {
+                    settings.set(this.id, this.checked);
+                }
             } else {
-                settings.set(this.id, this.value);
+                // text box
+                if (settings.has(this.id)) {
+                    this.value = settings.get(this.id);
+                } else {
+                    settings.set(this.id, this.value);
+                }
             }
         });
     });
@@ -148,10 +171,10 @@ function updateCard (data) {
         .html((trending_l ? '&uarr;' : '&darr;') +' ('+ averages['long'][data.product_id].length +' Trades)')
         .css('color', (trending_l ? 'green' : 'red'));
 
-
-    // div.find('span#buys_enabled')
-    //     .html(trending ? '&#10004;' : '&#10008;')
-    //     .css('color', (trending ? 'green' : 'red'));
+    varShouldBuy[data.product_id] = shouldBuy(data.product_id);
+    div.find('span#buys_enabled')
+        .html(varShouldBuy[data.product_id] ? '&#10004;' : '&#10008;')
+        .css('color', (settings.get(data.product_id +'_trade_enabled') ? (varShouldBuy[data.product_id] ? 'green' : 'red') : 'yellow'));
 
 
     $('#'+ data.product_id +'_last_trade').html(div);
@@ -159,11 +182,126 @@ function updateCard (data) {
 
 
 
+function isTriggered(product_id, price) {
+    if (trigger[product_id].length > 0) {
+        if (price < trigger[product_id][0] || price > trigger[product_id][1]) {
+            trigger[product_id][0] = parseFloat(price) - parseFloat(settings.get(product_id +'_buy_trigger'));
+            trigger[product_id][1] = parseFloat(price) + parseFloat(settings.get(product_id +'_buy_trigger'));
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        // Likely first trigger; just load the vars.
+        trigger[product_id][0] = parseFloat(price) - parseFloat(settings.get(product_id +'_buy_trigger'));
+        trigger[product_id][1] = parseFloat(price) + parseFloat(settings.get(product_id +'_buy_trigger'));
+        return false;
+    }
+}
+
+
+
+function buySpread(product_id, price) {
+    console.info('BUYING ...');
+    buy = {
+        'product_id': product_id,
+        'size': (parseFloat(settings.get(product_id +'_buy_amount')) / price).toFixed(8),
+        'price': null,
+    }
+
+    if (buy.size < 0.01) {
+        buy.size = 0.01; //Minimum Size
+    }
+
+    console.info(buy);
+
+    for (i=0; i < parseInt(settings.get(product_id +'_spread_n')); i++) {
+        buy.price = parseFloat(price - (parseFloat(settings.get(product_id +'_spread_v')) * (i + 1))).toFixed(2);
+        
+        console.info('BUY: '+ buy.price);
+        pubBTCUSDClient.buy(buy, function(err, response, data) {
+            // console.info(response);
+            console.info(data);
+        });
+    }
+}
+
+
+function sellSpread(product_id, price) {
+    console.info('SELLING ...');
+    sell = {
+        'product_id': product_id,
+        'size': (parseFloat(settings.get(product_id +'_sell_amount')) / price).toFixed(8),
+        'price': null,
+    }
+    console.info(sell);
+
+    if (sell.size < 0.01) {
+        sell.size = 0.01; //Minimum Size
+    }
+
+    for (i=0; i < parseInt(settings.get(product_id +'_spread_n')); i++) {
+        sell.price = parseFloat(price + (parseFloat(settings.get(product_id +'_spread_v')) * (i + 1))).toFixed(2);
+        
+        console.info('SELL: '+ sell.price);
+        pubBTCUSDClient.sell(sell, function(err, response, data) {
+            // console.info(response);
+            console.info(data);
+        });
+    }
+}
+
+
+
 var websocket_message = function(data) {
     if (data.type === 'match') {
-        console.info(data);
+        // console.info(data);
         updateCard(data);
+
+        if (settings.get(data.product_id +'_trade_enabled')) {
+            console.info('Evaluating '+ data.product_id +' at '+ data.price +'...');
+            if (isTriggered(data.product_id, data.price)) {
+                console.info('\tTriggered ...');
+
+                if (varShouldBuy[data.product_id]) {
+                    console.info('\t\tShould buy!');
+                    buySpread(data.product_id, data.price);
+                    sellSpread(data.product_id, data.price);
+                } else {
+                    console.info('\t\tShould NOT buy!');
+                }
+            } else {
+                var t_get_orders = setInterval(pubBTCUSDClient.getOrders(function(err,response,data){
+                    // console.info('Updating Orders.');
+                    orders = data;
+                }), 5000);
+                var t_get_fills = setInterval(pubBTCUSDClient.getOrders(function(err,response,data){
+                    // console.info('Checking for fills.');
+                    if (data[0].order_id != lastFill) {
+                        lastFill = data[0].order_id;
+                        if (data[0].side === 'buy') {
+                            sellSpread(data.product_id, data.price);
+                        }
+
+                        // Update Balance
+                        pubBTCUSDClient.getAccounts(function(err,response,data){$('#USD_balance').text(parseFloat(data[0].balance).toFixed(2))})
+
+                    }
+                }), 1000);
+            }
+        }
+    } else if (data.type === 'done') {
+        // Order filled or canceled
+        if (data.reason === 'filled' && data.side === 'buy') {
+            orders.forEach(function(i) {
+                if (i.id === data.order_id) {
+                    console.info('BOUGHT: '+ data.price +' '+ data.product_id);
+                    sellSpread(data.profile_id, data.price);
+                }
+            });
+        }
     }
+
 };
 
 
@@ -202,10 +340,21 @@ var callbackHistoricRates = function(err, response, data) {
             product_id = 'LTC-USD'
         }
 
-        data.forEach(function (i) {
-            averages['short'][product_id].push(parseFloat(i[4]));
-            averages['long'][product_id].push(parseFloat(i[4]));
-        });
+        try {
+            data.forEach(function (i) {
+                averages['short'][product_id].push(parseFloat(i[4]));
+                averages['long'][product_id].push(parseFloat(i[4]));
+            });
+        } catch (e) {
+            console.warn(e);
+            if (product_id === 'BTC-USD') {
+                pubBTCUSDClient.getProductHistoricRates({'granularity': 10}, callbackHistoricRates);
+            } else if (product_id === 'ETH-USD') {
+                pubETHUSDClient.getProductHistoricRates({'granularity': 10}, callbackHistoricRates);
+            } else if (product_id === 'LTC-USD') {
+                pubLTCUSDClient.getProductHistoricRates({'granularity': 10}, callbackHistoricRates);
+            }
+        }
     }
 };
 
@@ -228,13 +377,74 @@ function main(){
 };
 
 
-
 ////////////////////////////////////
 // Intial Settings
 ////////////////////////////////////
 $('div#settings div#form').hide();
 loadConfig();
 
+
+var authenticated = false;
+
+if (settings.get('account_sandbox')){
+    // Running in Sandbox
+    auth = {
+        'key': settings.get('account_sandbox_api_key'),
+        'secret': settings.get('account_sandbox_api_secret'),
+        'passphrase': settings.get('account_sandbox_api_passphrase'),
+    };
+    if (!(auth.secret && auth.key && auth.passphrase)) {
+        // UNAUTHENTICATED
+        var websocket = new Gdax.WebsocketClient(['BTC-USD', 'ETH-USD', 'LTC-USD'], 'wss://ws-feed-public.sandbox.gdax.com');
+        var pubBTCUSDClient = new Gdax.PublicClient('BTC-USD', 'https://api-public.sandbox.gdax.com');
+        var pubETHUSDClient = new Gdax.PublicClient('ETH-USD', 'https://api-public.sandbox.gdax.com');
+        var pubLTCUSDClient = new Gdax.PublicClient('LTC-USD', 'https://api-public.sandbox.gdax.com');
+    } else {
+        // AUTHENTICATED
+        var websocket = new Gdax.WebsocketClient(['BTC-USD', 'ETH-USD', 'LTC-USD'], 'wss://ws-feed-public.sandbox.gdax.com', auth);
+        var pubBTCUSDClient = new Gdax.AuthenticatedClient(auth.key, auth.secret, auth.passphrase, product_id='BTC-USD', api_url='https://api-public.sandbox.gdax.com');
+        var pubETHUSDClient = new Gdax.AuthenticatedClient(auth.key, auth.secret, auth.passphrase, product_id='ETH-USD', api_url='https://api-public.sandbox.gdax.com');
+        var pubLTCUSDClient = new Gdax.AuthenticatedClient(auth.key, auth.secret, auth.passphrase, product_id='LTC-USD', api_url='https://api-public.sandbox.gdax.com');
+        authenticated = true;
+    }
+} else {
+    // Running in Production
+    auth = {
+        'key': settings.get('account_api_key'),
+        'secret': settings.get('account_api_secret'),
+        'passphrase': settings.get('account_api_passphrase'),
+    };
+    if (!(auth.secret && auth.key && auth.passphrase)) {
+        // UNAUTHENTICATED
+        var websocket = new Gdax.WebsocketClient(['BTC-USD', 'ETH-USD', 'LTC-USD']);
+        var pubBTCUSDClient = new Gdax.PublicClient('BTC-USD', 'https://api.gdax.com');
+        var pubETHUSDClient = new Gdax.PublicClient('ETH-USD', 'https://api.gdax.com');
+        var pubLTCUSDClient = new Gdax.PublicClient('LTC-USD', 'https://api.gdax.com');
+    } else {
+        // AUTHENTICATED
+        var websocket = new Gdax.WebsocketClient(['BTC-USD', 'ETH-USD', 'LTC-USD'], 'wss://ws-feed.gdax.com', auth);
+        var pubBTCUSDClient = new Gdax.AuthenticatedClient(auth.key, auth.secret, auth.passphrase);
+        var pubETHUSDClient = new Gdax.AuthenticatedClient(auth.key, auth.secret, auth.passphrase);
+        pubETHUSDClient.productID = 'ETH-USD';
+        var pubLTCUSDClient = new Gdax.AuthenticatedClient(auth.key, auth.secret, auth.passphrase);
+        pubLTCUSDClient.productID = 'LTC-USD';
+        authenticated = true;
+    }
+}
+
+if (authenticated) {
+    pubBTCUSDClient.getAccounts(function(err,response,data) {
+        $('span#profile_id').text(data[0].profile_id);
+
+        // data.forEach(function() {
+        //     if (this.currency === 'USD') {
+        //         $('span#USD_balance')
+        //             .text('$'+ parsefloat(this.balance).toFixed(2))
+        //             .css('color', 'green');
+        //     }
+        // });
+    });
+}
 
 
 ////////////////////////////////////
@@ -246,7 +456,15 @@ $('span#settings').click(function() {
 });
 
 $('form .setting').change(function() {
-    settings.set(this.id, this.value);
+    if ((this.id === 'account_sandbox') && (this.checked === true) && !(settings.get('account_sandbox_api_key') && settings.get('account_sandbox_api_secret') && settings.get('account_sandbox_api_passphrase'))) {
+        alert('Cannot enter sandbox mode without entering a Sandbox Key, Sandbox Secret, and Sandbox Passphrase!');
+        this.checked = false;
+    }
+    if (this.type === 'checkbox') {
+        settings.set(this.id, this.checked);
+    } else {
+        settings.set(this.id, this.value);
+    }
 });
 
 
@@ -255,6 +473,9 @@ $('form .setting').change(function() {
 ////////////////////////////////////
 websocket.on('message', websocket_message);
 websocket.on('error', function() {
+    if (settings.get('account_sandbox')) {
+        
+    }
     location.reload();
 });
 websocket.on('close', function() {
@@ -267,5 +488,6 @@ websocket.on('close', function() {
 // Launch processes
 ////////////////////////////////////
 historicPull();
-var t_main = setInterval(main, 500);
+var t_main = setInterval(main, 1000);
+
 // var t_historicReset = setInterval(historicReset, 15*60*1000);
