@@ -2,37 +2,166 @@
 
 
 var Gdax = require('gdax');
+var os = require('os');
+var prettyBytes = require('pretty-bytes');
+const settings = require('electron-settings');
 
 var websocket = new Gdax.WebsocketClient(['BTC-USD', 'ETH-USD', 'LTC-USD']);
 var pubBTCUSDClient = new Gdax.PublicClient('BTC-USD', 'https://api.gdax.com');
+var pubETHUSDClient = new Gdax.PublicClient('ETH-USD', 'https://api.gdax.com');
+var pubLTCUSDClient = new Gdax.PublicClient('LTC-USD', 'https://api.gdax.com');
+
+var averages = {
+    'long': {
+        'BTC-USD': [],
+        'ETH-USD': [],
+        'LTC-USD': [],
+    },
+    'short': {
+        'BTC-USD': [],
+        'ETH-USD': [],
+        'LTC-USD': [],
+    },
+};
+
+var varIsTrendingUp = {
+    'long': {
+        'BTC-USD': null,
+        'ETH-USD': null,
+        'LTC-USD': null,
+    },
+    'short': {
+        'BTC-USD': null,
+        'ETH-USD': null,
+        'LTC-USD': null,
+    },
+};
+
+var varShouldBuy = {
+    'BTC-USD': null,
+    'ETH-USD': null,
+    'LTC-USD': null,
+};
+
+
+function isTrendingUp(s_or_l, product_id, price) {
+    // console.log('isTrendingUp('+ product_id +') averages length: '+ averages[s_or_l][product_id].length);
+    // console.log('isTrendingUp(product_id) averages:'+ averages[s_or_l][product_id]);
+
+    var sum = 0;
+    // console.log('isTrendingUp sum: '+ sum);
+    averages[s_or_l][product_id].forEach(function (i) { sum += i });
+    // console.log('isTrendingUp sum: '+ sum);
+    var prev_avg = sum/averages[s_or_l][product_id].length;
+    // console.log('isTrendingUp prev_avg: '+ prev_avg);
+
+    averages[s_or_l][product_id].push(parseFloat(price));
+    var sum = 0;
+    // console.log('isTrendingUp sum: '+ sum);
+    averages[s_or_l][product_id].forEach(function (i) { sum += i });
+    // console.log('isTrendingUp sum: '+ sum);
+    var avg = sum/averages[s_or_l][product_id].length;
+    // console.log('isTrendingUp avg: '+ avg);
+
+    var setting = product_id +'_trend_trade_'+ s_or_l +'_ct';
+    if (averages[s_or_l][product_id].length > settings.get(setting)) {
+        // console.warn('More trades than needed.\n\tHave ('+ product_id +' '+ s_or_l +'):'+ averages[s_or_l][product_id].length +'\n\tNeed ('+ setting +'):'+ settings.get(setting));
+        while (averages[s_or_l][product_id].length > settings.get(setting)) {
+            averages[s_or_l][product_id].shift();
+        }
+    } else {
+        // console.info('Historical Trades looks good.\n\tHave ('+ product_id +' '+ s_or_l +'):'+ averages[s_or_l][product_id].length +'\n\tNeed ('+ setting +'):'+ settings.get(setting));
+    }
+
+    varIsTrendingUp[s_or_l][product_id] = (avg > prev_avg ? true : false);
+    return (avg > prev_avg ? true : false);
+}
+
+
+
+function shouldBuy(product_id) {
+    if (varIsTrendingUp['short'][product_id]) {
+        return true;
+    }
+}
+
+
+
+function loadConfig() {
+    ['BTC-USD', 'ETH-USD', 'LTC-USD'].forEach(function(product_id) {
+        $($('form#'+ product_id).prop('elements')).each(function () {
+            if (settings.has(this.id)) {
+                this.value = settings.get(this.id);
+            } else {
+                settings.set(this.id, this.value);
+            }
+        });
+    });
+}
 
 
 
 function updateCard (data) {
-    var div = $('<table><tr><th>Trade Size</th><th>Price (USD)</th><th>Time</th></tr><tr><td><span id="trade_size" class="trade_size"></span></td><td><span id="price" class="price"></span></td><td><span id="time" class="time"></span></td></tr></table>');
+    var div = $(`<table><tr>
+            <th>Trend Long</th>
+            <th>Trend Short</th>
+            <th>Buy</th>
+            <th>Trade Size</th>
+            <th>Price (USD)</th>
+            <th>Time</th>
+        </tr><tr>
+            <td><span id="trend_l" class="trend_l"></span></td>
+            <td><span id="trend_s" class="trend_s"></span></td>
+            <td><span id="buys_enabled" class="buys_enabled"></span></td>
+            <td><span id="trade_size" class="trade_size"></span></td>
+            <td><span id="price" class="price"></span></td>
+            <td><span id="time" class="time"></span></td>
+        </tr></table>`);
 
     // div.find('h1').text('BAR');
 
-    div.find('span#trade_size').text(data.size);
+    div.find('span#trade_size')
+        .text(data.size)
+        .css('color', 'gray');
+
 
     div.find('span#price')
         .text(parseFloat(data.price).toFixed(2))
         .css('color', (data.side === 'sell' ? 'green' : 'red'))
         .css('font-weight', 'bold');
 
+
     var date = new Date(data.time);
     div.find('span#time')
         .text(('0'+ date.getHours()).slice(-2) +':'+ ('0'+ date.getMinutes()).slice(-2) +':'+ ('0'+ date.getSeconds()).slice(-2))
         .css('color', 'gray');
 
-    $('#'+ data.product_id +'last_trade').html(div);
+
+    var trending_s = isTrendingUp('short', data.product_id, data.price);
+    div.find('span#trend_s')
+        .html((trending_s ? '&uarr;' : '&darr;') +' ('+ averages['short'][data.product_id].length +' Trades)')
+        .css('color', (trending_s ? 'green' : 'red'));
+
+
+    var trending_l = isTrendingUp('long', data.product_id, data.price);
+    div.find('span#trend_l')
+        .html((trending_l ? '&uarr;' : '&darr;') +' ('+ averages['long'][data.product_id].length +' Trades)')
+        .css('color', (trending_l ? 'green' : 'red'));
+
+
+    // div.find('span#buys_enabled')
+    //     .html(trending ? '&#10004;' : '&#10008;')
+    //     .css('color', (trending ? 'green' : 'red'));
+
+
+    $('#'+ data.product_id +'_last_trade').html(div);
 }
 
 
 
 var websocket_message = function(data) {
-    $('.status').html('websocket: '+ data.product_id +' - '+ data.type);
     if (data.type === 'match') {
+        console.info(data);
         updateCard(data);
     }
 };
@@ -45,31 +174,52 @@ var callback = function(err, response, data) {
     }
 
     if (response) {
-        $('.status').html('response '+ response.request.path);
-        if (response.request.path.match(/^\/products\/[^\/]+\/ticker/)) {
-            updateBTCUSD(data);
-        }
+        console.log('response '+ response.request.path);
+        // $('.status').html('response '+ response.request.path);
+        
     }
 
     if (data) {
-        console.log("data: "+ data);
+        console.log('data: '+ data);
         console.log(data);
     }
 };
 
 
-function historic(){
-    ge
-}
+
+var callbackHistoricRates = function(err, response, data) {
+    if (err) {
+        console.error(err);
+    }
+
+    if (response) {
+        console.log('callbackHistoricRates response: '+ response.request.path);
+        if (response.request.path.includes('BTC-USD')) {
+            product_id = 'BTC-USD'
+        } else if (response.request.path.includes('ETH-USD')) {
+            product_id = 'ETH-USD'
+        } else if (response.request.path.includes('LTC-USD')) {
+            product_id = 'LTC-USD'
+        }
+
+        data.forEach(function (i) {
+            averages['short'][product_id].push(parseFloat(i[4]));
+            averages['long'][product_id].push(parseFloat(i[4]));
+        });
+    }
+};
+
+
+function historicPull(){
+    pubBTCUSDClient.getProductHistoricRates({'granularity': 10}, callbackHistoricRates);
+    pubETHUSDClient.getProductHistoricRates({'granularity': 10}, callbackHistoricRates);
+    pubLTCUSDClient.getProductHistoricRates({'granularity': 10}, callbackHistoricRates);
+};
 
 
 
 function main(){
-
-    // Display some statistics about this computer, using node's os module.
-
-    var os = require('os');
-    var prettyBytes = require('pretty-bytes');
+    $('.status').html('GDAX Stream: <span>' + prettyBytes(websocket.socket.bytesReceived)+ '</span>');
 
     $('.stats').html('Number of cpu cores: <span>' + os.cpus().length + '</span>');
     $('.stats').append('Free memory: <span>' + prettyBytes(os.freemem())+ '</span>');
@@ -79,5 +229,43 @@ function main(){
 
 
 
+////////////////////////////////////
+// Intial Settings
+////////////////////////////////////
+$('div#settings div#form').hide();
+loadConfig();
+
+
+
+////////////////////////////////////
+// Button Configs
+////////////////////////////////////
+$('span#settings').click(function() {
+    $(this).nextAll('#form:first')
+        .toggle('slow');
+});
+
+$('form .setting').change(function() {
+    settings.set(this.id, this.value);
+});
+
+
+////////////////////////////////////
+// Open Web Socket
+////////////////////////////////////
 websocket.on('message', websocket_message);
-var t = setInterval(main, 500);
+websocket.on('error', function() {
+    location.reload();
+});
+websocket.on('close', function() {
+    location.reload();
+});
+
+
+
+////////////////////////////////////
+// Launch processes
+////////////////////////////////////
+historicPull();
+var t_main = setInterval(main, 500);
+// var t_historicReset = setInterval(historicReset, 15*60*1000);

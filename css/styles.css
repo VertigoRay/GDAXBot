@@ -54,6 +54,10 @@ div#card div.last_trade span.price {
 	font-weight: bold;
 }
 
+div#card div#settings div#form {
+	
+}
+
 /* Stats */
 
 footer {
