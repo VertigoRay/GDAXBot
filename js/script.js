@@ -1,7 +1,7 @@
 // Mixing jQuery and Node.js code in the same file? Yes please!
 
 
-var Gdax = require('gdax');
+
 var os = require('os');
 var prettyBytes = require('pretty-bytes');
 const settings = require('electron-settings');
@@ -181,10 +181,13 @@ function updateCard (data) {
 }
 
 
-
+///////////////////////////////
+// Determine when the next high and low buy trigger is. Could be as low as .01.
+///////////////////////////////
 function isTriggered(product_id, price) {
     if (trigger[product_id].length > 0) {
         if (price < trigger[product_id][0] || price > trigger[product_id][1]) {
+            // load new vars.
             trigger[product_id][0] = parseFloat(price) - parseFloat(settings.get(product_id +'_buy_trigger'));
             trigger[product_id][1] = parseFloat(price) + parseFloat(settings.get(product_id +'_buy_trigger'));
             return true;
@@ -192,7 +195,7 @@ function isTriggered(product_id, price) {
             return false;
         }
     } else {
-        // Likely first trigger; just load the vars.
+        // Likely first time this is called; just load the vars.
         trigger[product_id][0] = parseFloat(price) - parseFloat(settings.get(product_id +'_buy_trigger'));
         trigger[product_id][1] = parseFloat(price) + parseFloat(settings.get(product_id +'_buy_trigger'));
         return false;
@@ -253,56 +256,10 @@ function sellSpread(product_id, price) {
 
 
 
-var websocket_message = function(data) {
-    if (data.type === 'match') {
-        // console.info(data);
-        updateCard(data);
 
-        if (settings.get(data.product_id +'_trade_enabled')) {
-            console.info('Evaluating '+ data.product_id +' at '+ data.price +'...');
-            if (isTriggered(data.product_id, data.price)) {
-                console.info('\tTriggered ...');
 
-                if (varShouldBuy[data.product_id]) {
-                    console.info('\t\tShould buy!');
-                    buySpread(data.product_id, data.price);
-                    sellSpread(data.product_id, data.price);
-                } else {
-                    console.info('\t\tShould NOT buy!');
-                }
-            } else {
-                var t_get_orders = setInterval(pubBTCUSDClient.getOrders(function(err,response,data){
-                    // console.info('Updating Orders.');
-                    orders = data;
-                }), 5000);
-                var t_get_fills = setInterval(pubBTCUSDClient.getOrders(function(err,response,data){
-                    // console.info('Checking for fills.');
-                    if (data[0].order_id != lastFill) {
-                        lastFill = data[0].order_id;
-                        if (data[0].side === 'buy') {
-                            sellSpread(data.product_id, data.price);
-                        }
 
-                        // Update Balance
-                        pubBTCUSDClient.getAccounts(function(err,response,data){$('#USD_balance').text(parseFloat(data[0].balance).toFixed(2))})
 
-                    }
-                }), 1000);
-            }
-        }
-    } else if (data.type === 'done') {
-        // Order filled or canceled
-        if (data.reason === 'filled' && data.side === 'buy') {
-            orders.forEach(function(i) {
-                if (i.id === data.order_id) {
-                    console.info('BOUGHT: '+ data.price +' '+ data.product_id);
-                    sellSpread(data.profile_id, data.price);
-                }
-            });
-        }
-    }
-
-};
 
 
 
@@ -468,19 +425,7 @@ $('form .setting').change(function() {
 });
 
 
-////////////////////////////////////
-// Open Web Socket
-////////////////////////////////////
-websocket.on('message', websocket_message);
-websocket.on('error', function() {
-    if (settings.get('account_sandbox')) {
-        
-    }
-    location.reload();
-});
-websocket.on('close', function() {
-    location.reload();
-});
+
 
 
 
