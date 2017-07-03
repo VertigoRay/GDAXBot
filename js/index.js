@@ -1,10 +1,13 @@
 'use strict'
 
+const {gdaxsocket} = require('./js/websocket.js')
 const {ipcRenderer} = require('electron');
+const {orders} = require('./js/orders.js');
 const os = require('os');
 const prettyBytes = require('pretty-bytes');
 const settings = require('electron-settings');
-
+const kue = require('kue')
+  , queue = kue.createQueue();
 
 
 function loadConfig() {
@@ -31,6 +34,8 @@ function loadConfig() {
 
 
 function updateTicker (data) {
+	console.log('updateTicker: '+ data);
+	console.log(data);
 	var div = $(`<table><tr>
 			<th>Trend Long</th>
 			<th>Trend Short</th>
@@ -60,27 +65,28 @@ function updateTicker (data) {
 		.css('font-weight', 'bold');
 
 
-	var date = new Date(data.time);
+	let date = new Date(data.time);
 	div.find('span#time')
 		.text(('0'+ date.getHours()).slice(-2) +':'+ ('0'+ date.getMinutes()).slice(-2) +':'+ ('0'+ date.getSeconds()).slice(-2))
 		.css('color', 'gray');
 
 
-	var trending_s = isTrendingUp('short', data.product_id, data.price);
+	let trending_s = gdaxsocket.is_trending_up('short', data.product_id, data.price);
 	div.find('span#trend_s')
-		.html((trending_s ? '&uarr;' : '&darr;') +' ('+ averages['short'][data.product_id].length +' Trades)')
+		.html((trending_s ? '&uarr;' : '&darr;') +' ('+ gdaxsocket.averages['short'][data.product_id].length +' Trades)')
 		.css('color', (trending_s ? 'green' : 'red'));
 
 
-	var trending_l = isTrendingUp('long', data.product_id, data.price);
+	let trending_l = gdaxsocket.is_trending_up('long', data.product_id, data.price);
 	div.find('span#trend_l')
-		.html((trending_l ? '&uarr;' : '&darr;') +' ('+ averages['long'][data.product_id].length +' Trades)')
+		.html((trending_l ? '&uarr;' : '&darr;') +' ('+ gdaxsocket.averages['long'][data.product_id].length +' Trades)')
 		.css('color', (trending_l ? 'green' : 'red'));
 
-	varShouldBuy[data.product_id] = shouldBuy(data.product_id);
+
+	let should_buy = gdaxsocket.should_buy(data.product_id);
 	div.find('span#buys_enabled')
-		.html(varShouldBuy[data.product_id] ? '&#10004;' : '&#10008;')
-		.css('color', (settings.get(data.product_id +'_trade_enabled') ? (varShouldBuy[data.product_id] ? 'green' : 'red') : 'yellow'));
+		.html(should_buy ? '&#10004;' : '&#10008;')
+		.css('color', (settings.get(data.product_id +'_trade_enabled') ? (should_buy ? 'green' : 'red') : 'yellow'));
 
 
 	$('#'+ data.product_id +'_last_trade').html(div);
@@ -131,12 +137,15 @@ $('form .setting').change(function() {
 
 
 ////////////////////////////////////
-// Listeners
+// Queue Processors
 ////////////////////////////////////
-ipcRenderer.on('websocket_done_filled_buy_ours', (event, data) => {
-	console.info(data);
+queue.process('websocket_done_filled_buy_ours', function(job, done) {
+	console.info(job.data.data);
+	done();
 });
 
-ipcRenderer.on('websocket_match', (event, data) => {
-	updateTicker(data);
+queue.process('websocket_match', function(job, done) {
+	console.log(job.data.data);
+	updateTicker(job.data.data);
+	done();
 });

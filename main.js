@@ -83,27 +83,32 @@ app.on('activate', function () {
 //   }
 // });
 
-const gdaxsocket = require('./js/websocket.js')
+const {gdaxsocket} = require('./js/websocket.js')
 const {ipcMain} = require('electron')
+const {orders} = require('./js/orders.js');
 
 // let mainValue = ipcRenderer.sendSync('isWebSocketAuthenticated');
-ipcMain.on('isWebSocketAuthenticated', (event) => {
+ipcMain.on('isWebSocketAuthenticated', function(event) {
 	event.returnValue = gdaxsocket.authenticated;
 });
 
-ipcMain.on('getOrder', (event, order_id) => {
-	event.returnValue = gdaxsocket.orders.getOrder(order_id);
+ipcMain.on('getOrder', function(event, order_id) {
+	event.returnValue = orders.get_order(order_id);
 });
 
-ipcMain.on('getOrders', (event) => {
-	event.returnValue = gdaxsocket.orders.getOrders();
+ipcMain.on('getOrders', function(event) {
+	event.returnValue = orders.get_orders();
 });
 
-ipcMain.on('getWebsocketBytesReceived', (event, order_id) => {
-	// event.returnValue = gdaxsocket.websocket.bytesReceived;
-	event.returnValue = 999999;
+ipcMain.on('getWebsocketBytesReceived', function(event, order_id) {
+	let bytesReceived = gdaxsocket.websocket.socket.bytesReceived;
+	event.returnValue = bytesReceived;
 });
 
 ipcMain.on('isOrderMine', (event, order_id) => {
-	event.returnValue = gdaxsocket.orders.isOrderMine(order_id);
+	event.returnValue = orders.is_order_mine(order_id);
 });
+
+var kue = require('kue');
+kue.createQueue();
+kue.app.listen(3000);

@@ -231,27 +231,7 @@ function buySpread(product_id, price) {
 
 
 function sellSpread(product_id, price) {
-    console.info('SELLING ...');
-    sell = {
-        'product_id': product_id,
-        'size': (parseFloat(settings.get(product_id +'_sell_amount')) / price).toFixed(8),
-        'price': null,
-    }
-    console.info(sell);
-
-    if (sell.size < 0.01) {
-        sell.size = 0.01; //Minimum Size
-    }
-
-    for (i=0; i < parseInt(settings.get(product_id +'_spread_n')); i++) {
-        sell.price = parseFloat(price + (parseFloat(settings.get(product_id +'_spread_v')) * (i + 1))).toFixed(2);
-        
-        console.info('SELL: '+ sell.price);
-        pubBTCUSDClient.sell(sell, function(err, response, data) {
-            // console.info(response);
-            console.info(data);
-        });
-    }
+    
 }
 
 
