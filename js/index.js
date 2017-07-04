@@ -32,8 +32,6 @@ function loadConfig() {
 
 
 function updateTicker (data) {
-	console.log('updateTicker: '+ data);
-	console.log(data);
 	var div = $(`<table><tr>
 			<th>Trend Long</th>
 			<th>Trend Short</th>

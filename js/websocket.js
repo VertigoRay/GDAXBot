@@ -317,8 +317,10 @@ class Websocket {
 
 
 	cancel_all_buy_orders(product_id, loop=false) {
+		console.log('CANCEL: '+ product_id);
 		for (var order in this.orders) {
 			if (order.status === 'open' && order.side === 'buy') {
+				console.log('CANCEL: '+ order.id);
 				this.gdax[order.product_id].cancelOrder(order.id, function(err, response, data){
 					if (err) {
 						this.refresh_orders(after=1000);
@@ -378,7 +380,7 @@ class Websocket {
 
 	historicPull() {
 		['BTC-USD','ETH-USD','LTC-USD'].forEach((i) => {
-			this.gdax[i].getProductHistoricRates({'granularity': 10}, this.historic_callback);
+			this.gdax[i].getProductHistoricRates(this.historic_callback);
 		});
 	};
 }
@@ -413,9 +415,24 @@ queue.process('buy', buy_concurrency, function(job, done) {
 			websocket.gdax[job.data.product_id].buy(buy, (err, response, data) => {
 				if (err) {
 					job.log(err);
+					console.error(err);
 					done(err);
 				} else {
-					job.log('Order Placed: '+ data.id);
+					job.log('Order Placed: '+ data.id + data.message);
+					if (data.message == 'Insufficient funds') {
+						var lowest_price = 999999999999999999999999;
+						var lowest_id = undefined;
+						
+						for (var order in websocket.orders) {
+							if (order.product_id === job.data.product_id && order.price < lowest_price) {
+								lowest_price = order.price;
+								lowest_id = order.id;
+							}
+							websocket.gdax[job.data.product_id].cancelOrder(order.id, function(err, response, data){});
+						}
+					}
+					console.log('Order Placed: '+ data.id);
+					console.log(data);
 					websocket.orders[data.id] = data;
 				}
 			});

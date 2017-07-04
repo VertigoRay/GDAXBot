@@ -92,6 +92,18 @@ ipcMain.on('getAveragesLength', (event, s_or_l, product_id) => {
 	event.returnValue = gdaxsocket.averages[s_or_l][product_id].length;
 });
 
+ipcMain.on('getFills', function(event, product_id) {
+	gdaxsocket.gdax[product_id].getFills({'after': 1000}, (err, response, data) => {
+		if (err) {
+			console.error(err);
+		} else {
+			console.info(data);
+		}
+
+		event.returnValue = data;
+	});
+});
+
 ipcMain.on('getOrder', function(event, order_id) {
 	event.returnValue = gdaxsocket.get_order(order_id);
 });
