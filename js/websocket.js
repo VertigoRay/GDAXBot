@@ -468,12 +468,12 @@ queue.process('buy', buy_concurrency, function(job, done) {
 	}
 
 	done();
-});
+}).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
 
 
 
 let sell_concurrency = 5;
-queue.process('sell', sell_concurrency, function(job, done) {
+let job_sell = queue.process('sell', sell_concurrency, function(job, done) {
 	const uuid = require('uuid');
 
 	job.log('SELLING ...');
@@ -529,7 +529,7 @@ queue.process('sell', sell_concurrency, function(job, done) {
 		}
 	}
 	done();
-});
+}).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
 
 module.exports = {
 	gdaxsocket: websocket,
