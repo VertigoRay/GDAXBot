@@ -129,7 +129,7 @@ class Websocket {
 				queue.create('websocket_match', {
 					data: data,
 					title: 'WEBSOCKET: MATCH '+ data.product_id +' ('+ data.price +') '+ data.time,
-				}).priority('low').removeOnComplete(true).save();
+				}).priority('low').removeOnComplete(true).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
 
 				//if price is at the next Trigger price.
 				if (this.is_triggered(data.product_id, data.price)) {
@@ -143,7 +143,7 @@ class Websocket {
 							price: data.price,
 							product_id: data.product_id,
 							title: 'Buy: '+ data.product_id +' '+ data.price,
-						}).priority(this.priority[data.product_id]).removeOnComplete(true).save();
+						}).priority(this.priority[data.product_id]).removeOnComplete(true).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
 					} else {
 						console.info('\t\tShould NOT buy; cancelling all current buy orders!');
 						this.cancel_all_buy_orders(data.product_id);
@@ -155,7 +155,7 @@ class Websocket {
 					queue.create('websocket_done_filled_buy_ours', {
 						data: data,
 						title: 'WEBSOCKET: DONE '+ data.reason +' '+ data.side +' Ours: '+ data.order_id,
-					}).priority('low').removeOnComplete(true).save();
+					}).priority('low').removeOnComplete(true).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
 					////////////////////////////
 					// We need to see if this is one of our orders
 					// if so, we need to place a sell order.
@@ -166,7 +166,7 @@ class Websocket {
 						price: data.price,
 						product_id: data.product_id,
 						title: 'Buy Order Filled: '+ data.product_id +' '+ data.price,
-					}).priority(this.priority[data.product_id]).removeOnComplete(true).save();
+					}).priority(this.priority[data.product_id]).removeOnComplete(true).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
 				}
 			}
 		};
@@ -342,7 +342,7 @@ class Websocket {
 		queue.create('websocket_match', {
 			data: data,
 			title: 'WEBSOCKET: MATCH '+ data.product_id +' ('+ data.price +') '+ data.time,
-		}).priority('low').removeOnComplete(true).save();
+		}).priority('low').removeOnComplete(true).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
 	}
 
 
@@ -403,7 +403,7 @@ queue.process('buy', buy_concurrency, function(job, done) {
 		buy.size = 0.01; //Minimum Size
 	}
 
-	if (settings.get(job.data.product_id +'_cancel_after') > 0) {
+	if (settings.get(job.data.product_id +'_cancel_after') != 0) {
 		buy.cancel_after = settings.get(job.data.product_id +'_cancel_after');
 	}
 
@@ -423,6 +423,7 @@ queue.process('buy', buy_concurrency, function(job, done) {
 					done(err);
 				} else {
 					job.log('Order Placed: '+ data.id + data.message);
+					job.log(buy);
 					// if (data.message == 'Insufficient funds') {
 					// 	var lowest_price = 999999999999999999999999;
 					// 	var lowest_id = undefined;
@@ -438,6 +439,7 @@ queue.process('buy', buy_concurrency, function(job, done) {
 					// 	}
 					// }
 					console.log('Order Placed: '+ data.id);
+					console.log(buy);
 					console.log(data);
 					websocket.orders[data.id] = data;
 				}
@@ -468,12 +470,12 @@ queue.process('buy', buy_concurrency, function(job, done) {
 	}
 
 	done();
-}).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
+});
 
 
 
 let sell_concurrency = 5;
-let job_sell = queue.process('sell', sell_concurrency, function(job, done) {
+queue.process('sell', sell_concurrency, function(job, done) {
 	const uuid = require('uuid');
 
 	job.log('SELLING ...');
@@ -529,7 +531,7 @@ let job_sell = queue.process('sell', sell_concurrency, function(job, done) {
 		}
 	}
 	done();
-}).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
+});
 
 module.exports = {
 	gdaxsocket: websocket,
