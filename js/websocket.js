@@ -403,6 +403,10 @@ queue.process('buy', buy_concurrency, function(job, done) {
 		buy.size = 0.01; //Minimum Size
 	}
 
+	if (settings.get(job.data.product_id +'_cancel_after') > 0) {
+		buy.cancel_after = settings.get(job.data.product_id +'_cancel_after');
+	}
+
 	job.log(buy);
 
 	for (var i=0; i < parseInt(settings.get(job.data.product_id +'_spread_n')); i++) {
@@ -419,18 +423,20 @@ queue.process('buy', buy_concurrency, function(job, done) {
 					done(err);
 				} else {
 					job.log('Order Placed: '+ data.id + data.message);
-					if (data.message == 'Insufficient funds') {
-						var lowest_price = 999999999999999999999999;
-						var lowest_id = undefined;
+					// if (data.message == 'Insufficient funds') {
+					// 	var lowest_price = 999999999999999999999999;
+					// 	var lowest_id = undefined;
 						
-						for (var order in websocket.orders) {
-							if (order.product_id === job.data.product_id && order.price < lowest_price) {
-								lowest_price = order.price;
-								lowest_id = order.id;
-							}
-							websocket.gdax[job.data.product_id].cancelOrder(order.id, function(err, response, data){});
-						}
-					}
+					// 	for (var order in websocket.orders) {
+					// 		if (order.side === 'buy' && order.product_id === job.data.product_id && order.price < lowest_price) {
+					// 			console.log('CANCEL: '+ order);
+					// 			console.log(order);
+					// 			lowest_price = order.price;
+					// 			lowest_id = order.id;
+					// 		}
+					// 		websocket.gdax[job.data.product_id].cancelOrder(order.id, function(err, response, data){});
+					// 	}
+					// }
 					console.log('Order Placed: '+ data.id);
 					console.log(data);
 					websocket.orders[data.id] = data;
