@@ -1,8 +1,6 @@
 'use strict'
 
-const {gdaxsocket} = require('./js/websocket.js')
 const {ipcRenderer} = require('electron');
-const {orders} = require('./js/orders.js');
 const os = require('os');
 const prettyBytes = require('pretty-bytes');
 const settings = require('electron-settings');
@@ -71,19 +69,19 @@ function updateTicker (data) {
 		.css('color', 'gray');
 
 
-	let trending_s = gdaxsocket.is_trending_up('short', data.product_id, data.price);
+	let trending_s = ipcRenderer.sendSync('isTrendingUp', 'short', data.product_id, data.price);
 	div.find('span#trend_s')
-		.html((trending_s ? '&uarr;' : '&darr;') +' ('+ gdaxsocket.averages['short'][data.product_id].length +' Trades)')
+		.html((trending_s ? '&uarr;' : '&darr;') +' ('+ ipcRenderer.sendSync('getAveragesLength', 'short', data.product_id) +' Trades)')
 		.css('color', (trending_s ? 'green' : 'red'));
 
 
-	let trending_l = gdaxsocket.is_trending_up('long', data.product_id, data.price);
+	let trending_l = ipcRenderer.sendSync('isTrendingUp', 'long', data.product_id, data.price);
 	div.find('span#trend_l')
-		.html((trending_l ? '&uarr;' : '&darr;') +' ('+ gdaxsocket.averages['long'][data.product_id].length +' Trades)')
+		.html((trending_l ? '&uarr;' : '&darr;') +' ('+ ipcRenderer.sendSync('getAveragesLength', 'long', data.product_id) +' Trades)')
 		.css('color', (trending_l ? 'green' : 'red'));
 
 
-	let should_buy = gdaxsocket.should_buy(data.product_id);
+	let should_buy = ipcRenderer.sendSync('shouldBuy', data.product_id);
 	div.find('span#buys_enabled')
 		.html(should_buy ? '&#10004;' : '&#10008;')
 		.css('color', (settings.get(data.product_id +'_trade_enabled') ? (should_buy ? 'green' : 'red') : 'yellow'));

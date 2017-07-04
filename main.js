@@ -85,19 +85,19 @@ app.on('activate', function () {
 
 const {gdaxsocket} = require('./js/websocket.js')
 const {ipcMain} = require('electron')
-const {orders} = require('./js/orders.js');
 
 // let mainValue = ipcRenderer.sendSync('isWebSocketAuthenticated');
-ipcMain.on('isWebSocketAuthenticated', function(event) {
-	event.returnValue = gdaxsocket.authenticated;
+
+ipcMain.on('getAveragesLength', (event, s_or_l, product_id) => {
+	event.returnValue = gdaxsocket.averages[s_or_l][product_id].length;
 });
 
 ipcMain.on('getOrder', function(event, order_id) {
-	event.returnValue = orders.get_order(order_id);
+	event.returnValue = gdaxsocket.get_order(order_id);
 });
 
 ipcMain.on('getOrders', function(event) {
-	event.returnValue = orders.get_orders();
+	event.returnValue = gdaxsocket.get_orders();
 });
 
 ipcMain.on('getWebsocketBytesReceived', function(event, order_id) {
@@ -106,9 +106,22 @@ ipcMain.on('getWebsocketBytesReceived', function(event, order_id) {
 });
 
 ipcMain.on('isOrderMine', (event, order_id) => {
-	event.returnValue = orders.is_order_mine(order_id);
+	event.returnValue = gdaxsocket.is_order_mine(order_id);
+});
+
+ipcMain.on('isTrendingUp', (event, s_or_l, product_id, price) => {
+	event.returnValue = gdaxsocket.is_trending_up(s_or_l, product_id, price);
+});
+
+ipcMain.on('isWebSocketAuthenticated', function(event) {
+	event.returnValue = gdaxsocket.authenticated;
+});
+
+ipcMain.on('shouldBuy', (event, product_id) => {
+	event.returnValue = gdaxsocket.should_buy(product_id);
 });
 
 var kue = require('kue');
 kue.createQueue();
+kue.app.set('title', 'GDAX Trader Queue');
 kue.app.listen(3000);
