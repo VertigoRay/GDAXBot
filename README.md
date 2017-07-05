@@ -68,7 +68,7 @@ Enter your GDAX API Key, Secret, and Passphrase so that the bot will have access
 
 ## Coin Settings
 
-Click *Settings*, under the Coin-USD title, to acceses the coin specific settings. Click it again to hide coin specific settings. **There is no *Apply* or *OK* button. All changes are detected and applied immediately.**
+Click *Settings*, under the *Coin-USD* title, to acceses the coin specific settings. Click it again to hide coin specific settings. **There is no *Apply* or *OK* button. All changes are detected and applied immediately.**
 
 - **Trade Enabled**: enables/disables LIVE trading for the coin.
     + If disabled, the buy indicator will show up as yellow; instead of green or red.
@@ -92,11 +92,11 @@ Click *Settings*, under the Coin-USD title, to acceses the coin specific setting
     + `0` is also a valid option and means: *Never Expire*
 - **Spread (#)**: How many buy orders to place. See *Spread ($)* for examples.
 - **Spread ($)**: At what interval below the current price to place the buy orders.
-    + Here's the example from the picture:
+    + Here's the example from the picture showing *BTC-USD* settings and how *BTC* would be traded based on those settings:
         * Place *one* buy order at $0.50 below the *Price (USD)*: $2573.25
-        * Of course trading isn't enables, so no buy orders would placed.
+        * Of course trading isn't enabled, so no buy orders would actually be placed.
     + If we set the *Spread (#)* to `3`, and enable trading:
-        * Place *three* buy orders; the first will be at $0.50 below the *Price (USD)*, and the next two will each be $0.50 below the previous"
-        * First Buy Order: $2573.25
-        * Second Buy Order: $2572.75
-        * Third Buy Order: $2572.25
+        * Place *three* buy orders; the first will be at $0.50 below the *Price (USD)*, and the next two will each be $0.50 below the previous:
+            - First Buy Order: $2573.25
+            - Second Buy Order: $2572.75
+            - Third Buy Order: $2572.25
