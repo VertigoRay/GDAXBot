@@ -52,23 +52,23 @@ Your bot will have access to all funds in your GDAX account. You can move funds 
     + **Time**: Time of the last trade seen in the market.
 - GDAX Stream
     + This shows how much data has been seen over the web socket.
-    + Note: I've seen where the web socket doesn't connect properly when you open the bot. In which caseyou will see 0 here. If you see 0 for more than 10 seconds, it's usually better to just kill the bot and re-open it.
+    + Note: I've seen where the web socket doesn't connect properly when you open the bot. In which case you will see 0 here. If you see 0 for more than 10 seconds, it's usually better to just kill the bot and re-open it.
 - OS Information
     + This just shows CPU and Free Memory ... cause I can.
 
 ## Account Settings
 
-Click *Account Settings*, in the top right, to acceses your account settings.
+Click *Account Settings*, in the top right, to acceses your account settings. Click it again to hide your account settings. **There is no *Apply* or *OK* button. All changes are detected and applied immediately.**
 
-:bangbang: Important: Sandbox settings are currently not working, so just ignore them for now.
+:bangbang: **Important**: Sandbox settings are currently not working, so just ignore them for now.
 
-Enter your GDAX API Key, Secret, and Passphrase so that the bot will have access to your API.
+Enter your GDAX API Key, Secret, and Passphrase so that the bot will have access to your API. If you don't have these, see the [*Prep Work* section](#prep-work); above.
 
-WARNING: All of these are stored in plain text in your App Data directory (windows). *I'll work on encrypting these at some point in the future.*
-
-There is no *Apply* or *OK* button. All changes are detected and applied immediately.
+:bangbang: **WARNING**: All of these settings are stored in plain text in your App Data directory (windows). *I'll work on encrypting these at some point in the future.*
 
 ## Coin Settings
+
+Click *Settings*, under the Coin-USD title, to acceses the coin specific settings. Click it again to hide coin specific settings. **There is no *Apply* or *OK* button. All changes are detected and applied immediately.**
 
 - **Trade Enabled**: enables/disables LIVE trading for the coin.
     + If disabled, the buy indicator will show up as yellow; instead of green or red.
