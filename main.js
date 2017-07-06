@@ -83,8 +83,9 @@ app.on('activate', function () {
 //   }
 // });
 
-const {gdaxsocket} = require('./js/websocket.js')
-const {ipcMain} = require('electron')
+global.websocket_closed = false;
+var   {gdaxsocket} = require('./js/websocket.js');
+const {ipcMain} = require('electron');
 
 // let mainValue = ipcRenderer.sendSync('isWebSocketAuthenticated');
 
@@ -113,7 +114,7 @@ ipcMain.on('getOrders', function(event) {
 });
 
 ipcMain.on('getWebsocketBytesReceived', function(event, order_id) {
-	let bytesReceived = gdaxsocket.websocket.socket.bytesReceived;
+	let bytesReceived = gdaxsocket.websocket !== undefined ? gdaxsocket.websocket.socket.bytesReceived : 0;
 	event.returnValue = bytesReceived;
 });
 
@@ -132,6 +133,20 @@ ipcMain.on('isWebSocketAuthenticated', function(event) {
 ipcMain.on('shouldBuy', (event, product_id) => {
 	event.returnValue = gdaxsocket.should_buy(product_id);
 });
+
+
+
+setInterval(function(){
+	// Keep an eye on websocket, and re-open it if it's closed
+	if (global.websocket_closed) {
+		console.log('/////////////////////////////////////////////////');
+		console.log('// Re-creating Websocket');
+		console.log('/////////////////////////////////////////////////');
+		gdaxsocket = require('./js/websocket.js');
+		global.websocket_closed = false;
+	}
+}, 1000);
+
 
 var kue = require('kue');
 kue.createQueue();

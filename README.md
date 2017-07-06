@@ -90,8 +90,8 @@ Click *Settings*, under the *Coin-USD* title, to acceses the coin specific setti
 - **Sell Amount ($)**: Sell for this amount above the buy amount.
 - **Cancel Buy (`min`, `hour`, `day`)**: Expire the stale buy order after a *minute*, an *hour*, or a *day*; respectively.
     + `0` is also a valid option and means: *Never Expire*
-- **Spread (#)**: How many buy orders to place. See *Spread ($)* for examples.
-- **Spread ($)**: At what interval below the current price to place the buy orders.
+- **Spread (#)**: How many buy/sell orders to place. See *Spread ($)* for examples.
+- **Spread ($)**: At what interval below/above the current price to place the buy/sell orders.
     + Here's the example from the picture showing *BTC-USD* settings and how *BTC* would be traded based on those settings:
         * Place *one* buy order at $0.50 below the *Price (USD)*: $2573.25
         * Of course trading isn't enabled, so no buy orders would actually be placed.

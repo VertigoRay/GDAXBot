@@ -182,9 +182,13 @@ class Websocket {
 		});
 		this.websocket.on('message', this.message);
 		this.websocket.on('error', function(err) {
+			console.log('Websocket: Error');
 			console.error(err);
 		});
-		this.websocket.on('close', this.open_conn);
+		this.websocket.on('close', () => {
+			console.log('Websocket: Close');
+			global.websocket_closed = true;
+		});
 
 
 
