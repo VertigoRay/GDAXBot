@@ -18,14 +18,14 @@ I'm using [v6.11.0 LTS](https://nodejs.org/en/).
 
 # Prep Work
 
-1. Make sure you have a [Coinbase](https://coinbase.com) account; if not you can make one with [my referral link](](https://www.coinbase.com/join/593ec37501653a0135721e05) and we'll both get $10.
+1. Make sure you have a [Coinbase](https://coinbase.com) account; if not you can make one with [my referral link](https://www.coinbase.com/join/593ec37501653a0135721e05) and we'll both get $10.
 1. Go to [GDAX](https://gdax.com) and log in with your Coinbase account; they're the *same company*.
     - [Make an API key](https://www.gdax.com/settings/api) with `View` and `Trade` permissions.
     - Take note of the Passphrase, Key, and Key Secret that you are shown; your bot will need these for access to your account.
 
 ## Notes
 
-Your bot will have access to all funds in your GDAX account. You can move funds back and forth between Coinbase and GDAX instantly for free. So, if you want to hide* money from the bot, keep it in Coinbase.
+Your bot will have access to all funds in your GDAX account. You can move funds back and forth between Coinbase and GDAX instantly for free. So, if you want to *hide* money from the bot, keep it in Coinbase.
 
 # Bot Configuration
 
@@ -77,9 +77,9 @@ Click *Settings*, under the *Coin-USD* title, to acceses the coin specific setti
 - **Buy on Trend S Up**: Only buy when *Trend Short* is up (green).
     + Not checking this will cause buying on either up or down (red).
 - **Trend Long (#)**: The number of trades to include in *Trend Long*.
-    + The more trades you use the *safer* the estimate the trading will be.
+    + The more trades you use the *safer* the estimate is.
 - **Trend Short (#)**: The number of trades to include in *Trend Short*.
-    + The more trades you use the *safer* the estimate the trading will be.
+    + The more trades you use the *safer* the estimate is.
 - **Buy Amount ($)**: Amount of USD ($) to buy when placing a buy offer.
     + *IMPORTANT*: The minimum trade amount is 0.01 coin (aka: BTC, ETH, or LTC). If your Amount (in this field) is less than 0.01 coin, your buy will automatically move up to the minimum trade amount. Here's the minimum trade amount for the values in the picture:
         * BTC: $2573.75; Minimum Trade: $25.73
@@ -87,7 +87,7 @@ Click *Settings*, under the *Coin-USD* title, to acceses the coin specific setti
         * LTC: $51.01; Minimum Trade: $0.51
 - **Buy Trigger ($)**: Interval of movement to check again if we should buy. Here's an explanation based on the picture (`0.10`).
     + If the *Price (USD)* goes up or down $0.10, the bot will decide again if it wants to buy.
-- **Sell Amount ($)**: Sell for this amount above the buy amount.
+- **Sell Amount ($)**: Amount of USD ($) to sell when placing a buy offer.
 - **Cancel Buy (`min`, `hour`, `day`)**: Expire the stale buy order after a *minute*, an *hour*, or a *day*; respectively.
     + `0` is also a valid option and means: *Never Expire*
 - **Spread (#)**: How many buy/sell orders to place. See *Spread ($)* for examples.
