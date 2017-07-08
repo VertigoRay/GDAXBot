@@ -126,7 +126,7 @@ class Websocket {
 
 		this.message = (data) => {
 			if (data.type === 'match') {
-				console.info('WEBSOCKET: MATCH '+ data.product_id +' ('+ data.price +') '+ data.time);
+				// console.info('WEBSOCKET: MATCH '+ data.product_id +' ('+ data.price +') '+ data.time);
 				queue.create('websocket_match', {
 					data: data,
 					title: 'WEBSOCKET: MATCH '+ data.product_id +' ('+ data.price +') '+ data.time,
@@ -134,9 +134,9 @@ class Websocket {
 
 				//if price is at the next Trigger price.
 				if (this.is_triggered(data.product_id, data.price)) {
-					console.info('\tTriggered ...');
+					// console.info('\tTriggered ...');
 					if (this.should_buy(data.product_id)) {
-						console.info('\t\tShould buy!');
+						// console.info('\t\tShould buy!');
 						
 						queue.create('buy', {
 							data: data,
@@ -146,7 +146,7 @@ class Websocket {
 							title: 'Buy: '+ data.product_id +' '+ data.price,
 						}).priority(this.priority[data.product_id]).removeOnComplete(true).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
 					} else {
-						console.info('\t\tShould NOT buy; cancelling all current buy orders!');
+						// console.info('\t\tShould NOT buy; cancelling all current buy orders!');
 						this.cancel_all_buy_orders(data.product_id);
 					};
 				}
@@ -322,24 +322,39 @@ class Websocket {
 
 
 	cancel_all_buy_orders(product_id, loop=false) {
-		console.log('CANCEL: '+ product_id);
-		for (var order in this.orders) {
-			if (order.status === 'open' && order.side === 'buy') {
-				console.log('CANCEL: '+ order.id);
-				this.gdax[order.product_id].cancelOrder(order.id, function(err, response, data){
-					if (err) {
-						this.refresh_orders(after=1000);
-						if (!loop) {
-							this.cancel_all_buy_orders(product_id, loop=true);
-						} else {
+		var order_ids
+		this.gdax[product_id].getOrders((err, response, data) => {
+			if (err) {
+				console.error(err);
+			}
+
+			for (var order in data) {
+				if (data[order].side === 'buy') {
+					let msg_product_id = `${global.color.Bright}${product_id}${global.color.Reset}`;
+					let msg_price_color = global.last_price > data[order].price ? global.color.FgRed : global.color.FgGreen;
+					let msg_price = `${msg_price_color}${parseFloat(data[order].price).toFixed(2)}${global.color.Reset}`;
+
+					var msg = `${msg_product_id} ${msg_price} CANCEL: ${data[order].side} ${data[order].size} @ ${data[order].price}: ${data[order].id}`;
+					this.gdax[product_id].cancelOrder(data[order].id, (err, response, data) => {
+						if (err) {
+							console.log(msg);
 							console.error(err);
 						}
-					}
-				});
+						console.log(msg +': '+ data.status);
+					});
+				}
 			}
-		}
+		});
 	}
 
+
+	round_up_sell_orders(order_id, data) {
+		this.orders[order_id] = data;
+		queue.create('websocket_match', {
+			data: data,
+			title: 'WEBSOCKET: MATCH '+ data.product_id +' ('+ data.price +') '+ data.time,
+		}).priority('low').removeOnComplete(true).attempts(60).backoff({delay: 100, type: 'fixed'}).save();
+	}
 
 
 	change_order_status(order_id, data) {
@@ -373,16 +388,6 @@ class Websocket {
 
 
 
-	refresh_orders(after=3000) {
-		this.gdax[order.product_id].getOrders({'after':after}, function(err, response, data){
-			if (err) {
-				console.error(err);
-			}
-		});
-	}
-
-
-
 	historicPull() {
 		['BTC-USD','ETH-USD','LTC-USD'].forEach((i) => {
 			this.gdax[i].getProductHistoricRates(this.historic_callback);
@@ -402,6 +407,7 @@ queue.process('buy', buy_concurrency, function(job, done) {
 		'product_id': job.data.product_id,
 		'size': (parseFloat(settings.get(job.data.product_id +'_buy_amount')) / job.data.price).toFixed(8),
 		'price': null,
+		'post_only': true,
 	}
 
 	if (buy.size < 0.01) {
@@ -416,11 +422,17 @@ queue.process('buy', buy_concurrency, function(job, done) {
 
 	for (var i=0; i < parseInt(settings.get(job.data.product_id +'_spread_n')); i++) {
 		buy.price = parseFloat(job.data.price - (parseFloat(settings.get(job.data.product_id +'_spread_v')) * (i + 1))).toFixed(2);
-		
-		job.log('BUY: '+ buy.price);
+
+		let msg_product_id = `${global.color.Bright}${job.data.product_id}${global.color.Reset}`;
+		let msg_price_color = global.last_price > job.data.price ? global.color.FgRed : global.color.FgGreen;
+		let msg_price = `${msg_price_color}${parseFloat(job.data.price).toFixed(2)}${global.color.Reset}`;
+
+		var msg = `${msg_product_id} ${msg_price} BUY: ${buy.size} @ ${buy.price}`;
+
+		job.log(msg);
 		if (settings.get(job.data.product_id +'_trade_enabled')) {
 			job.log('Placing a Real Buy Order');
-			console.log('Placing a Real Buy Order');
+			// console.log('Placing a Real Buy Order');
 			websocket.gdax[job.data.product_id].buy(buy, (err, response, data) => {
 				if (err) {
 					job.log(err);
@@ -429,29 +441,27 @@ queue.process('buy', buy_concurrency, function(job, done) {
 				} else {
 					job.log('Order Placed: '+ data.id + data.message);
 					job.log(buy);
-					// if (data.message == 'Insufficient funds') {
-					// 	var lowest_price = 999999999999999999999999;
-					// 	var lowest_id = undefined;
-						
-					// 	for (var order in websocket.orders) {
-					// 		if (order.side === 'buy' && order.product_id === job.data.product_id && order.price < lowest_price) {
-					// 			console.log('CANCEL: '+ order);
-					// 			console.log(order);
-					// 			lowest_price = order.price;
-					// 			lowest_id = order.id;
-					// 		}
-					// 		websocket.gdax[job.data.product_id].cancelOrder(order.id, function(err, response, data){});
-					// 	}
-					// }
-					console.log('Order Placed: '+ data.id);
-					console.log(buy);
-					console.log(data);
+					
+					if(data.message !== undefined) {
+						// if (data.message == 'Insufficient funds') { Cancel lowest Buy Order? }
+						job.log('Message: '+ data.message);
+						console.log(msg +': '+ data.message);
+					} else {
+						job.log('data: '+ data);
+						job.log(data);
+						console.log(msg +': '+ data.id);
+					}
+					// console.log('Order Placed: '+ data.id);
+					// console.log(buy);
+					// console.log(data);
 					websocket.orders[data.id] = data;
+		'post_only': true,
 				}
 			});
 		} else {
 			job.log('Placing a FAKE Buy Order');
-			console.log('Placing a FAKE Buy Order');
+			// console.log(msg +' (FAKE)');
+			// console.log('Placing a FAKE Buy Order');
 			let data = {
 				id: 'FAKE-'+ uuid.v1(),
 				price: buy.price,
@@ -486,22 +496,49 @@ queue.process('sell', sell_concurrency, function(job, done) {
 	job.log('SELLING ...');
 	var sell = {
 		'product_id': job.data.product_id,
-		'size': (parseFloat(settings.get(job.data.product_id +'_sell_amount')) / job.data.price).toFixed(8),
+		'size': null,
 		'price': null,
 	}
 	job.log(sell);
 
-	if (sell.size < 0.01) {
-		sell.size = 0.01; //Minimum Size
-	}
+	var sell_first = parseFloat(settings.get(job.data.product_id +'_sell_above_buy'));
+	var sell_next = parseFloat(settings.get(job.data.product_id +'_spread_v'));
+	var sell_remaining = parseFloat(job.data.size);
 
 	for (var i=0; i < parseInt(settings.get(job.data.product_id +'_spread_n')); i++) {
-		sell.price = parseFloat(job.data.price + (parseFloat(settings.get(job.data.product_id +'_spread_v')) * (i + 1))).toFixed(2);
+		sell.size = (parseFloat(settings.get(job.data.product_id +'_sell_amount')) / job.data.price).toFixed(8);
+
+		if (sell.size < global.minimum_trade) {
+			sell.size = global.minimum_trade;
+		}
+
+		if ((sell_remaining - sell.size) < global.minimum_trade) {
+			sell.size = sell_remaining;
+			sell_remaining = 0;
+		} else {
+			sell_remaining = (sell_remaining - sell.size);
+		}
+
+
+		if (i === 0) {
+			sell.price = parseFloat(parseFloat(job.data.price) + sell_first).toFixed(2);
+		} else {
+			sell.price = parseFloat(parseFloat(job.data.price) + sell_first + (sell_next * i)).toFixed(2);
+		}
+
+
+		let msg_product_id = `${global.color.Bright}${job.data.product_id}${global.color.Reset}`;
+		let msg_price_color = global.last_price > job.data.price ? global.color.FgRed : global.color.FgGreen;
+		let msg_price = `${msg_price_color}${parseFloat(job.data.price).toFixed(2)}${global.color.Reset}`;
+
+		let msg = `${msg_product_id} ${msg_price} SELL: ${sell.size} @ ${sell.price}`;
+
+		job.log(msg);
 		
-		job.log('SELL: '+ sell.price);
 		if (settings.get(job.data.product_id +'_trade_enabled')) {
 			job.log('Placing a Real Sell Order');
-			console.log('Placing a Real Sell Order');
+			// console.log(msg);
+			// console.log('Placing a Real Sell Order');
 			websocket.gdax[job.data.product_id].sell(sell, function(err, response, data) {
 				if (err) {
 					job.log(err);
@@ -509,11 +546,20 @@ queue.process('sell', sell_concurrency, function(job, done) {
 				} else {
 					job.log('Order Placed: '+ data.id);
 					websocket.orders[data.id] = data;
+					if(data.message !== undefined) {
+						job.log('Message: '+ data.message);
+						console.log(msg +': '+ data.message);
+					} else {
+						job.log('data: '+ data);
+						job.log(data);
+						console.log(msg +': '+ data.id);
+					}
 				}
 			});
 		} else {
 			job.log('Placing a FAKE Sell Order');
-			console.log('Placing a FAKE Sell Order');
+			// console.log(msg +' (FAKE)');
+			// console.log('Placing a FAKE Sell Order');
 			let data = {
 				id: 'FAKE-'+ uuid.v1(),
 				price: sell.price,
@@ -535,6 +581,7 @@ queue.process('sell', sell_concurrency, function(job, done) {
 			websocket.orders[data.id] = data;
 		}
 	}
+	global.last_price = job.data.price
 	done();
 });
 
