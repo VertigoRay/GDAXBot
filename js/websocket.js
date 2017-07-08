@@ -442,10 +442,12 @@ queue.process('buy', buy_concurrency, function(job, done) {
 					job.log('Order Placed: '+ data.id + data.message);
 					job.log(buy);
 					
-					if(data.message !== undefined) {
-						// if (data.message == 'Insufficient funds') { Cancel lowest Buy Order? }
+					if (data.message !== undefined) {
 						job.log('Message: '+ data.message);
-						console.log(msg +': '+ data.message);
+						if (data.message !== 'Insufficient funds') {
+							// if (data.message == 'Insufficient funds') { Cancel lowest Buy Order? }
+							console.log(msg +': '+ data.message);
+						}
 					} else {
 						job.log('data: '+ data);
 						job.log(data);
@@ -546,9 +548,11 @@ queue.process('sell', sell_concurrency, function(job, done) {
 				} else {
 					job.log('Order Placed: '+ data.id);
 					websocket.orders[data.id] = data;
-					if(data.message !== undefined) {
+					if (data.message !== undefined) {
 						job.log('Message: '+ data.message);
-						console.log(msg +': '+ data.message);
+						if (data.message !== 'Insufficient funds') {
+							console.log(msg +': '+ data.message);
+						}
 					} else {
 						job.log('data: '+ data);
 						job.log(data);
