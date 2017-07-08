@@ -10,7 +10,7 @@ const kue = require('kue')
 
 class Websocket {
 	constructor() {
-		this.websocket = false;
+		this.websocket = null;
 		this.authenticated = false;
 
 		this.auth = {
@@ -74,6 +74,7 @@ class Websocket {
 
 
 		this.open_conn = () => {
+			this.websocket = null;
 			////////////////////////////////////
 			// Sandbox stream is currently down. Not sure why ...
 			////////////////////////////////////
@@ -187,7 +188,7 @@ class Websocket {
 		});
 		this.websocket.on('close', () => {
 			console.log('Websocket: Close');
-			global.websocket_closed = true;
+			this.open_conn();
 		});
 
 
