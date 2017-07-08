@@ -455,7 +455,6 @@ queue.process('buy', buy_concurrency, function(job, done) {
 					// console.log(buy);
 					// console.log(data);
 					websocket.orders[data.id] = data;
-		'post_only': true,
 				}
 			});
 		} else {
@@ -498,6 +497,7 @@ queue.process('sell', sell_concurrency, function(job, done) {
 		'product_id': job.data.product_id,
 		'size': null,
 		'price': null,
+		'post_only': true,
 	}
 	job.log(sell);
 
