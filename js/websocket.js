@@ -329,18 +329,22 @@ class Websocket {
 			}
 
 			for (var order in data) {
-				if (data[order].side === 'buy') {
+				// console.log('EVALUATING CANCEL ('+ product_id +'): '+ data[order], data[order]);
+				if (data[order].product_id === product_id && data[order].side === 'buy') {
+					// console.log('SHOULD CANCEL ('+ product_id +'): '+ data[order].product_id +', '+ data[order].side);
 					let msg_product_id = `${global.color.Bright}${product_id}${global.color.Reset}`;
 					let msg_price_color = global.last_price > data[order].price ? global.color.FgRed : global.color.FgGreen;
 					let msg_price = `${msg_price_color}${parseFloat(data[order].price).toFixed(2)}${global.color.Reset}`;
 
-					var msg = `${msg_product_id} ${msg_price} CANCEL: ${data[order].side} ${data[order].size} @ ${data[order].price}: ${data[order].id}`;
 					this.gdax[product_id].cancelOrder(data[order].id, (err, response, data) => {
+						let msg = `${msg_product_id} ${msg_price} CANCEL: ${data}`;
 						if (err) {
 							console.log(msg);
 							console.error(err);
 						}
-						console.log(msg +': '+ data.status);
+						if (data && !data.message) {
+							console.log(msg);
+						}
 					});
 				}
 			}
@@ -377,12 +381,38 @@ class Websocket {
 
 
 
-	get_order(order_id) {
-		return this.gdax[order.product_id].getOrder(order_id, function(err, response, data){
+	get_order(product_id, order_id) {
+		return this.gdax[product_id].getOrder(order_id, (err, response, data) => {
 			if (err) {
 				console.error(err);
 			}
 			return data;
+		});
+	}
+
+
+
+	get_orders(product_id) {
+		let client = product_id === 'all' ? 'BTC-USD' : product_id
+
+		return this.gdax[client].getOrders((err, response, data) => {
+			if (err) {
+				console.error(err);
+			}
+
+			if (product_id === 'all') {
+				return data;
+			} else {
+				var data_filtered = [];
+
+				for (var d in data) {
+					if (data[d].product_id === product_id) {
+						data_filtered.push(data);
+					}
+				}
+
+				return data_filtered;
+			}
 		});
 	}
 
@@ -436,6 +466,7 @@ queue.process('buy', buy_concurrency, function(job, done) {
 			websocket.gdax[job.data.product_id].buy(buy, (err, response, data) => {
 				if (err) {
 					job.log(err);
+					console.log(msg +': ERROR:'+ err.message);
 					console.error(err);
 					done(err);
 				} else {
@@ -544,6 +575,7 @@ queue.process('sell', sell_concurrency, function(job, done) {
 			websocket.gdax[job.data.product_id].sell(sell, function(err, response, data) {
 				if (err) {
 					job.log(err);
+					console.log(msg +': ERROR:'+ err.message);
 					done(err);
 				} else {
 					job.log('Order Placed: '+ data.id);

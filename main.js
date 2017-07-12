@@ -84,6 +84,7 @@ app.on('activate', function () {
 // });
 
 global.minimum_trade = 0.01;
+global.coins = ['BTC-USD', 'ETH-USD', 'LTC-USD'];
 
 global.color = {
 	Reset: "\x1b[0m",
@@ -116,6 +117,7 @@ global.color = {
 global.websocket_closed = false;
 var   {gdaxsocket} = require('./js/websocket.js');
 const {ipcMain} = require('electron');
+const settings = require('electron-settings');
 
 // let mainValue = ipcRenderer.sendSync('isWebSocketAuthenticated');
 
@@ -135,15 +137,15 @@ ipcMain.on('getFills', function(event, product_id) {
 	});
 });
 
-ipcMain.on('getOrder', function(event, order_id) {
-	event.returnValue = gdaxsocket.get_order(order_id);
+ipcMain.on('getOrder', function(event, product_id, order_id) {
+	event.returnValue = gdaxsocket.get_order(product_id, order_id);
 });
 
-ipcMain.on('getOrders', function(event) {
-	event.returnValue = gdaxsocket.get_orders();
+ipcMain.on('getOrders', function(event, product_id) {
+	event.returnValue = gdaxsocket.get_orders(product_id);
 });
 
-ipcMain.on('getWebsocketBytesReceived', function(event, order_id) {
+ipcMain.on('getWebsocketBytesReceived', function(event) {
 	let bytesReceived = gdaxsocket.websocket !== undefined ? gdaxsocket.websocket.socket.bytesReceived : 0;
 	event.returnValue = bytesReceived;
 });
@@ -176,6 +178,15 @@ setInterval(function(){
 		global.websocket_closed = false;
 	}
 }, 1000);
+
+
+
+for (var c in global.coins) {
+	setInterval(function(){
+		gdaxsocket.get_orders(global.coins[c]);
+	}, settings.get(global.coins[c] +'_sell_round_up_s', 3600));
+}
+
 
 
 var kue = require('kue');
