@@ -4,27 +4,20 @@
   "description": "GDAX Automated Trading",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "node ."
   },
   "repository": "https://github.com/VertigoRay/GDAX",
   "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial",
     "demo"
   ],
   "author": "VertigoRay",
   "license": "",
-  "devDependencies": {
-    "electron": "~1.6.2"
-  },
+  "devDependencies": {},
   "dependencies": {
-    "electron-settings": "^3.1.1",
+    "config": "^1.26.1",
     "gdax": "~0.4.2",
-    "kue": "^0.11.6",
-    "node-uuid": "^1.4.8",
-    "pretty-bytes": "^2.0.1",
-    "redis-server": "^1.1.0"
+    "stats-lite": "^2.1.0",
+    "threads": "^0.8.1",
+    "trading_bot": "^2.1.0"
   }
 }
