@@ -1,110 +1,122 @@
 'use strict';
 
-String.prototype.format = function(){
-    var a = this, b;
-    for(b in arguments){
-        a = a.replace(/%[a-z]/,arguments[b]);
-    }
-    return a; // Make chainable
-};
-
-const TradingBot = require('trading_bot');
+const settings = require('config');
 const spawn = require('threads').spawn;
+const stats = require("stats-lite")
+const term = require( 'terminal-kit' ).terminal ;
+const threads = require('threads');
 
-class VBot extends TradingBot {
-	constructor(options) {
-		options.auth = {
-			key: '5a6c552179eaac07fd6078e4d86986f5',
-			secret: 'LIzNBiXCXYsKRu2biIwVnWkeO5v38ryChMcB01eBthYXCwVQTKtjdG3F5hRO6IlX/oN0aeWLJd5n+YyNIqyFqA==',
-			passphrase: 'c5lvxf1vhes',
-			apiURI: 'https://api.gdax.com'
-		};
-		super(options);
+var websocket = null;
 
-		this.color = {
-			Reset: "\x1b[0m",
-			Bright: "\x1b[1m",
-			Dim: "\x1b[2m",
-			Underscore: "\x1b[4m",
-			Blink: "\x1b[5m",
-			Reverse: "\x1b[7m",
-			Hidden: "\x1b[8m",
+var websocket_is_open = null;
 
-			FgBlack: "\x1b[30m",
-			FgRed: "\x1b[31m",
-			FgGreen: "\x1b[32m",
-			FgYellow: "\x1b[33m",
-			FgBlue: "\x1b[34m",
-			FgMagenta: "\x1b[35m",
-			FgCyan: "\x1b[36m",
-			FgWhite: "\x1b[37m",
+var product_ids = settings.get('general.product_ids');
+var last_match = null;
 
-			BgBlack: "\x1b[40m",
-			BgRed: "\x1b[41m",
-			BgGreen: "\x1b[42m",
-			BgYellow: "\x1b[43m",
-			BgBlue: "\x1b[44m",
-			BgMagenta: "\x1b[45m",
-			BgCyan: "\x1b[46m",
-			BgWhite: "\x1b[47m",
-		}
-	}
+// product_ids.forEach((i) => {
+// 	last_match[i] = {};
+// });
 
-	_execute_trading_strategy() {
-		return new Promise((resolve, reject) => {
-			const self = this;
 
-			if (self.midmarket_price === null) {
-				return reject('Too soon for trading.');
+
+function open_websocket() {
+	websocket = spawn('./lib/websocket.js');
+
+	websocket
+		.on('message', function (message) {
+			if (message.getBytesReceived)
+			{
+				console.log(process.pid, '(websocket message) bytesReceived:', message.getBytesReceived);
 			}
+			else if (message.isOpen !== undefined)
+			{
+				websocket_is_open = message.isOpen;
+				// console.log(process.pid, '(websocket message) isOpen:', websocket_is_open);
+			}
+			else if (message.getLastMatch)
+			{
+				// console.log(process.pid, '(websocket message) LastMatch:', message.getLastMatch);
+				last_match = message.getLastMatch;
+			}
+			else if (message.ProductIds)
+			{
+				product_ids = message.ProductIds
+				console.log(process.pid, '(websocket message) ProductIds:', product_ids);
+			}
+			else if (message.getTrades)
+			{
+				// console.log(process.pid, '(websocket message) Trades:', message.Trades);
+				product_ids.forEach((i) => {
+					let price = null;
+					let trend_changed = false;
+					let trending_up = false;
 
-			let msg_product_id = `${self.color.Bright}${self.product}${self.color.Reset}`;
-			let msg_price_color = self.last_midmarket_price > self.midmarket_price ? self.color.FgRed : self.color.FgGreen;
-			let msg_price = `${msg_price_color}${parseFloat(self.midmarket_price).toFixed(2)}${self.color.Reset}`;
+					if (last_match && last_match[i]) {
+						price = parseFloat(last_match[i].price);
+					}
 
-			console.log(`${msg_product_id} ${msg_price}`);
+					if (price) {
+						let stdev = stats.stdev(message.getTrades[i]);
+						let mean = stats.mean(message.getTrades[i]);
 
-			let side = 'buy';
-			let size = 0.1 + 0.9 * Math.random();
-			size = size.toFixed(2);
-			var order = {
-				product_id: self.product,
-				type: 'market',
-				size: size
-			};
+						let difference = mean - price;
+						let absolute_value_of_difference = Math.abs(difference);
 
-			// API BUy!
-			// self.client[side](order, (err, res, body) => {
-			// 	if (err) {
-			// 		console.log('Error placing trade');
-			// 		return reject(err);
-			// 	}
-			// 	console.log(body);
-			// 	resolve();
-			// });
+						if (difference == absolute_value_of_difference) {
+							// Our price is below the mean
+							trending_up = true;
+						} else {
+							// Our price is above the mean
+							trending_up = false;
+						}
 
-			// Final / Cleanup
-			this.last_midmarket_price = self.midmarket_price
-		});
-	}
+						if (absolute_value_of_difference > stdev) {
+							// Trend has changed directions.
+							trend_changed = true;
+						}
+
+						console.log(
+							process.pid,
+							i,
+							message.getTrades[i].length,
+							stdev,
+							mean,
+							price,
+							difference,
+							absolute_value_of_difference,
+							trending_up,
+							trending_changed
+						);
+					}
+				});
+			}
+		})
+		.on('error', function(error) {
+			console.error(process.pid, 'Websocket Error:', error);
+		})
+		.on('exit', function() {
+			console.log(process.pid, 'Websocket has been terminated.');
+		})
 }
+open_websocket();
+
+setInterval(() => {
+	product_ids = settings.get('general.product_ids');
+	// console.log(process.pid, '(loop) LastMatch:', last_match);
+
+	websocket
+		.send('isOpen')
+		.send('getBytesReceived')
+		.send('getLastMatch')
+		.send('getTrades');
+
+	if (websocket_is_open === false) {
+		console.log(process.pid, 'Re-opening Websocket ...');
+		open_websocket();
+	}
+}, 1000);
 
 
-
-
-
-// const botBTC = new VBot({ product: 'BTC-USD' });
-// console.log('VBot (BTC) is starting ...');
-// botBTC.start_trading({ time: 1000 });
-
-// const botETH = new VBot({ product: 'ETH-USD' });
-// console.log('VBot (ETH) is starting ...');
-// botETH.start_trading({ time: 1000 });
-
-
- 
-const thread = spawn(function(input, done) {
-	const botLTC = new VBot({ product: 'LTC-USD' });
-	console.log('VBot (LTC) is starting ...');
-	botLTC.start_trading({ time: 1000 });
-});
+// if (websocket.websocket && websocket.websocket.socket) {
+// 	console.log('Bytes: ', websocket.websocket.socket.bytesReceived);
+// }

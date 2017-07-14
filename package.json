@@ -16,7 +16,9 @@
   "dependencies": {
     "config": "^1.26.1",
     "gdax": "~0.4.2",
+    "js-yaml": "^3.9.0",
     "stats-lite": "^2.1.0",
+    "terminal-kit": "^1.11.1",
     "threads": "^0.8.1",
     "trading_bot": "^2.1.0"
   }
