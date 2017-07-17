@@ -7,133 +7,92 @@ const sprintf = require('sprintf-js').sprintf;
 const terminal = spawn('./lib/terminal.js');
 const threads = require('threads');
 
-var terminal_data = {};
+var terminal_data = {
+	account: {
+		timestamp: new Date,
+		profile_id: 'e316cb9a-TEMP-FAKE-DATA-97829c1925de',
+		id: '343bb963-TEMP-FAKE-DATA-8b562d2f7a4e',
+		account: {
+			id: "a1b2c3d4",
+			balance: "1.100",
+			holds: "0.100",
+			available: "1.00",
+			currency: "USD"
+		},
+		calculations: {
+			sell_now: '12345.67890123',
+			wait_fill: '23456.78901234',
+			fees: '23.67890123',
+		},
+	},
+	coins: {
+		'BTC-USD': {
+			trade_enabled: false,
+			trending_up: (Math.floor(Math.random() * 2) ? true : false),
+			should_buy: (Math.floor(Math.random() * 2) ? true : false),
+			account: {
+				id: "a1b2c3d4",
+				balance: "1.100",
+				holds: "0.100",
+				available: "1.00",
+				currency: "BTC"
+			},
+			calculations: {
+				sell_now: '12345.67890123',
+				wait_fill: '23456.78901234',
+				fees: '23.67890123',
+			},
+		},
+		'ETH-USD': {
+			trade_enabled: true,
+			trending_up: (Math.floor(Math.random() * 2) ? true : false),
+			should_buy: (Math.floor(Math.random() * 2) ? true : false),
+			account: {
+				id: "a1b2c3d4",
+				balance: "1.100",
+				holds: "0.100",
+				available: "1.00",
+				currency: "ETH"
+			},
+			calculations: {
+				sell_now: '12345.67890123',
+				wait_fill: '23456.78901234',
+				fees: '23.67890123',
+			},
+		},
+		'LTC-USD': {
+			trade_enabled: true,
+			trending_up: (Math.floor(Math.random() * 2) ? true : false),
+			should_buy: (Math.floor(Math.random() * 2) ? true : false),
+			account: {
+				id: "a1b2c3d4",
+				balance: "1.100",
+				holds: "0.100",
+				available: "1.00",
+				currency: "LTC"
+			},
+			calculations: {
+				sell_now: '12345.67890123',
+				wait_fill: '23456.78901234',
+				fees: '23.67890123',
+			},
+		},
+	},
+};
 var websocket = null;
 var websocket_is_open = null;
 
 
 var product_ids = settings.get('general.product_ids');
 var last_match = {};
-terminal_data.coins = {};
+// terminal_data.coins = {};
 var trend_direction_up = {};
 
 product_ids.forEach((product_id) => {
-	terminal_data.coins[product_id] = {};
+	// terminal_data.coins[product_id] = {};
 	last_match[product_id] = {};
 	trend_direction_up[product_id] = null;
 });
-
-
-
-
-// let fake_account_data = Object.assign({
-// 		account: {
-// 			timestamp: new Date,
-// 			profile_id: 'e316cb9a-TEMP-FAKE-DATA-97829c1925de',
-// 			id: '343bb963-TEMP-FAKE-DATA-8b562d2f7a4e',
-// 			account: {
-// 				id: "a1b2c3d4",
-// 				balance: "1.100",
-// 				holds: "0.100",
-// 				available: "1.00",
-// 				currency: "USD"
-// 			},
-// 			calculations: {
-// 				sell_now: '12345.67890123',
-// 				wait_fill: '23456.78901234',
-// 				fees: '23.67890123',
-// 			},
-// 		},
-// 		coins: {
-// 			'BTC-USD': {
-// 				trade_enabled: false,
-// 				trending_up: (Math.floor(Math.random() * 2) ? true : false),
-// 				should_buy: (Math.floor(Math.random() * 2) ? true : false),
-// 				last_match: {
-// 					type: "match",
-// 					trade_id: parseInt(Math.random() * 100),
-// 					sequence: 50,
-// 					maker_order_id: "ac928c66-TEMP-FAKE-DATA-a110027a60e8",
-// 					taker_order_id: "132fb6ae-TEMP-FAKE-DATA-d681ac05cea1",
-// 					time: "2014-11-07T08:19:27.028459Z",
-// 					product_id: "BTC-USD",
-// 					size: (Math.random() * 100).toFixed(8),
-// 					price: (Math.random() * 10000).toFixed(8),
-// 					side: Math.floor(Math.random() * 2) ? 'buy' : 'sell',
-// 				},
-// 				account: {
-// 					id: "a1b2c3d4",
-// 					balance: "1.100",
-// 					holds: "0.100",
-// 					available: "1.00",
-// 					currency: "BTC"
-// 				},
-// 				calculations: {
-// 					sell_now: '12345.67890123',
-// 					wait_fill: '23456.78901234',
-// 					fees: '23.67890123',
-// 				},
-// 			},
-// 			'ETH-USD': {
-// 				trade_enabled: true,
-// 				trending_up: (Math.floor(Math.random() * 2) ? true : false),
-// 				should_buy: (Math.floor(Math.random() * 2) ? true : false),
-// 				last_match: {
-// 					type: "match",
-// 					trade_id: parseInt(Math.random() * 100),
-// 					sequence: 50,
-// 					maker_order_id: "ac928c66-TEMP-FAKE-DATA-a110027a60e8",
-// 					taker_order_id: "132fb6ae-TEMP-FAKE-DATA-d681ac05cea1",
-// 					time: "2014-11-07T08:19:27.028459Z",
-// 					product_id: "ETH-USD",
-// 					size: (Math.random() * 100).toFixed(8),
-// 					price: (Math.random() * 1000).toFixed(8),
-// 					side: Math.floor(Math.random() * 2) ? 'buy' : 'sell',
-// 				},
-// 				account: {
-// 					id: "a1b2c3d4",
-// 					balance: "1.100",
-// 					holds: "0.100",
-// 					available: "1.00",
-// 					currency: "ETH"
-// 				},
-// 				calculations: {
-// 					sell_now: '12345.67890123',
-// 					wait_fill: '23456.78901234',
-// 					fees: '23.67890123',
-// 				},
-// 			},
-// 			'LTC-USD': {
-// 				trade_enabled: true,
-// 				trending_up: (Math.floor(Math.random() * 2) ? true : false),
-// 				should_buy: (Math.floor(Math.random() * 2) ? true : false),
-// 				last_match: {
-// 					type: "match",
-// 					trade_id: parseInt(Math.random() * 100),
-// 					sequence: 50,
-// 					maker_order_id: "ac928c66-TEMP-FAKE-DATA-a110027a60e8",
-// 					taker_order_id: "132fb6ae-TEMP-FAKE-DATA-d681ac05cea1",
-// 					time: "2014-11-07T08:19:27.028459Z",
-// 					product_id: "LTC-USD",
-// 					size: (Math.random() * 100).toFixed(8),
-// 					price: (Math.random() * 100).toFixed(8),
-// 					side: Math.floor(Math.random() * 2) ? 'buy' : 'sell',
-// 				},
-// 				account: {
-// 					id: "a1b2c3d4",
-// 					balance: "1.100",
-// 					holds: "0.100",
-// 					available: "1.00",
-// 					currency: "LTC"
-// 				},
-// 				calculations: {
-// 					sell_now: '12345.67890123',
-// 					wait_fill: '23456.78901234',
-// 					fees: '23.67890123',
-// 				},
-// 			},
-// 		},
-// 	}), terminal_data;
 
 
 
@@ -217,7 +176,7 @@ function open_websocket() {
 			{
 				// console.log(process.pid, '(websocket message) LastMatch:', message.getLastMatch);
 				product_ids.forEach((product_id) => {
-					terminal_data.coins[product_id].last_match = message.getLastMatch;
+					terminal_data.coins[product_id].last_match = message.getLastMatch[product_id];
 				});
 			}
 			else if (message.ProductIds)
@@ -245,6 +204,8 @@ open_websocket();
 setInterval(() => {
 	websocket
 		.send('isOpen')
+		.send('getAccount')
+		.send('getAccountHolds')
 		.send('getBytesReceived')
 		.send('getLastMatch')
 		.send('getTrades');

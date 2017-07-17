@@ -104,11 +104,11 @@
 		},
 		"price": {
 			"buy": {
-				"color": "green",
+				"color": "red",
 				"bgColor": "gray"
 			},
 			"sell": {
-				"color": "red",
+				"color": "green",
 				"bgColor": "gray"
 			}
 		}
