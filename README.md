@@ -39,6 +39,10 @@ The `NODE_ENV` environment variable will have to match the name of the YAML file
 - Windows: `SET NODE_ENV=production`
 - Linux/OSX: `export NODE_ENV=production`
 
+:bangbang: **Be sure to add your API credentials to your `production.yaml` file!**
+
+**Note:** you can name `production.yaml` whatever you want; maybe you prefer your username (ie: `VertigoRay.yaml`). Just be sure to set `NODE_ENV` correspondingly.
+
 # Starting the Bot
 
 ## Quick Start

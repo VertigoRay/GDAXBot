@@ -1,12 +1,12 @@
 {
   "name": "gdax-trader",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "GDAX Automated Trading",
   "main": "main.js",
   "scripts": {
-    "start": "node ."
+    "start": "node . "
   },
-  "repository": "https://github.com/VertigoRay/GDAX",
+  "repository": "https://gitlab.com/VertigoRay/GDAX",
   "keywords": [
     "demo"
   ],
@@ -14,14 +14,20 @@
   "license": "",
   "devDependencies": {},
   "dependencies": {
+    "blessed": "^0.1.81",
     "config": "^1.26.1",
+    "drawille": "^1.1.0",
     "gdax": "~0.4.2",
+    "glob": "^7.1.2",
     "js-yaml": "^3.9.0",
+    "os-utils": "0.0.14",
+    "path": "^0.12.7",
     "pretty-bytes": "^4.0.2",
     "sprintf-js": "^1.1.1",
     "stats-lite": "^2.1.0",
     "terminal-kit": "^1.11.1",
     "threads": "^0.8.1",
-    "trading_bot": "^2.1.0"
+    "trading_bot": "^2.1.0",
+    "winston": "^2.3.1"
   }
 }

@@ -1,0 +1,137 @@
+{
+	"name": "monokai",
+	"author": "VertigoRay",
+	"main": {
+		"color": "brightYellow",
+		"bgColor": "cyan"
+	},
+	"header": {
+		"seperator": {
+			"char": "   |   ",
+			"theme" : {
+				"color": "yellow",
+				"bgColor": "cyan",
+				"bgTransparency": true
+			}
+		},
+		"container" : {
+			"color": "yellow",
+			"bgColor": "cyan",
+			"bgTransparency": true
+		},
+		"title": {
+			"color": "brightYellow",
+			"bgColor": "cyan",
+			"bgTransparency": true
+		},
+		"label": {
+			"color": "yellow",
+			"bgColor": "cyan",
+			"bgTransparency": true
+		},
+		"standard": {
+			"color": 56,
+			"bgColor": "cyan",
+			"bgTransparency": true
+		}
+	},
+	"account": {
+		"seperator": {
+			"char": "   |   ",
+			"theme" : {
+				"color": "cyan",
+				"bgColor": "gray",
+				"bgTransparency": true
+			}
+		},
+		"container" : {
+			"color": "black",
+			"bgColor": "gray"
+		},
+		"title": {
+			"color": "cyan",
+			"bgColor": "gray"
+		},
+		"label": {
+			"color": "black",
+			"bgColor": "gray"
+		},
+		"standard": {
+			"color": "white",
+			"bgColor": "gray"
+		}
+	},
+	"coins": {
+		"container" : {
+			"color": "black",
+			"bgColor": "gray"
+		},
+		"title": {
+			"color": "cyan",
+			"bgColor": "gray"
+		},
+		"label": {
+			"color": "black",
+			"bgColor": "gray"
+		},
+		"standard": {
+			"color": 56,
+			"bgColor": "gray"
+		},
+		"buying": {
+			"yes": {
+				"color": "green",
+				"bgColor": "gray"
+			},
+			"no": {
+				"color": "red",
+				"bgColor": "gray"
+			},
+			"cant": {
+				"color": "brightYellow",
+				"bgColor": "gray"
+			}
+		},
+		"trending": {
+			"up": {
+				"color": "green",
+				"bgColor": "gray"
+			},
+			"down": {
+				"color": "red",
+				"bgColor": "gray"
+			}
+		},
+		"price": {
+			"buy": {
+				"color": "green",
+				"bgColor": "gray"
+			},
+			"sell": {
+				"color": "red",
+				"bgColor": "gray"
+			}
+		}
+	},
+	"footer": {
+		"seperator": {
+			"char": "   |   ",
+			"theme" : {
+				"color": "black",
+				"bgColor": "white"
+			}
+		},
+		"container" : {
+			"color": "black",
+			"bgColor": "white"
+		},
+		"label": {
+			"color": "black",
+			"bgColor": "white"
+		},
+		"standard": {
+			"color": 56,
+			"bgColor": "white"
+		}
+	}
+}
