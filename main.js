@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('fs');
+const Log = require('log');
 const settings = require('config');
 const spawn = require('threads').spawn;
 const stats = require('stats-lite')
@@ -7,91 +9,96 @@ const sprintf = require('sprintf-js').sprintf;
 const terminal = spawn('./lib/terminal.js');
 const threads = require('threads');
 
+var log = new Log('debug', fs.createWriteStream('GDAX.log'));
+
 var terminal_data = {
-	account: {
-		timestamp: new Date,
-		profile_id: 'e316cb9a-TEMP-FAKE-DATA-97829c1925de',
-		id: '343bb963-TEMP-FAKE-DATA-8b562d2f7a4e',
-		account: {
-			id: "a1b2c3d4",
-			balance: "1.100",
-			holds: "0.100",
-			available: "1.00",
-			currency: "USD"
-		},
-		calculations: {
-			sell_now: '12345.67890123',
-			wait_fill: '23456.78901234',
-			fees: '23.67890123',
-		},
-	},
+	// account: {
+	// 	timestamp: new Date,
+	// 	profile_id: 'e316cb9a-TEMP-FAKE-DATA-97829c1925de',
+	// 	id: '343bb963-TEMP-FAKE-DATA-8b562d2f7a4e',
+	// 	account: {
+	// 		id: "a1b2c3d4",
+	// 		balance: "1.100",
+	// 		holds: "0.100",
+	// 		available: "1.00",
+	// 		currency: "USD"
+	// 	},
+	// 	calculations: {
+	// 		sell_now: '12345.67890123',
+	// 		wait_fill: '23456.78901234',
+	// 		fees: '23.67890123',
+	// 	},
+	// },
 	coins: {
 		'BTC-USD': {
-			trade_enabled: false,
 			trending_up: (Math.floor(Math.random() * 2) ? true : false),
 			should_buy: (Math.floor(Math.random() * 2) ? true : false),
-			account: {
-				id: "a1b2c3d4",
-				balance: "1.100",
-				holds: "0.100",
-				available: "1.00",
-				currency: "BTC"
-			},
-			calculations: {
-				sell_now: '12345.67890123',
-				wait_fill: '23456.78901234',
-				fees: '23.67890123',
-			},
+			// account: {
+			// 	id: "a1b2c3d4",
+			// 	balance: "1.100",
+			// 	hold: "0.100",
+			// 	available: "1.00",
+			// 	currency: "BTC"
+			// },
+			// calculations: {
+			// 	sell_now: '12345.67890123',
+			// 	wait_fill: '23456.78901234',
+			// 	fees: '23.67890123',
+			// },
 		},
 		'ETH-USD': {
-			trade_enabled: true,
 			trending_up: (Math.floor(Math.random() * 2) ? true : false),
 			should_buy: (Math.floor(Math.random() * 2) ? true : false),
-			account: {
-				id: "a1b2c3d4",
-				balance: "1.100",
-				holds: "0.100",
-				available: "1.00",
-				currency: "ETH"
-			},
-			calculations: {
-				sell_now: '12345.67890123',
-				wait_fill: '23456.78901234',
-				fees: '23.67890123',
-			},
+			// account: {
+			// 	id: "a1b2c3d4",
+			// 	balance: "1.100",
+			// 	hold: "0.100",
+			// 	available: "1.00",
+			// 	currency: "ETH"
+			// },
+			// calculations: {
+			// 	sell_now: '12345.67890123',
+			// 	wait_fill: '23456.78901234',
+			// 	fees: '23.67890123',
+			// },
 		},
 		'LTC-USD': {
-			trade_enabled: true,
 			trending_up: (Math.floor(Math.random() * 2) ? true : false),
 			should_buy: (Math.floor(Math.random() * 2) ? true : false),
-			account: {
-				id: "a1b2c3d4",
-				balance: "1.100",
-				holds: "0.100",
-				available: "1.00",
-				currency: "LTC"
-			},
-			calculations: {
-				sell_now: '12345.67890123',
-				wait_fill: '23456.78901234',
-				fees: '23.67890123',
-			},
+			// account: {
+			// 	id: "a1b2c3d4",
+			// 	balance: "1.100",
+			// 	hold: "0.100",
+			// 	available: "1.00",
+			// 	currency: "LTC"
+			// },
+			// calculations: {
+			// 	sell_now: '12345.67890123',
+			// 	wait_fill: '23456.78901234',
+			// 	fees: '23.67890123',
+			// },
 		},
 	},
 };
+var bot = {};
 var websocket = null;
 var websocket_is_open = null;
 
 
 var product_ids = settings.get('general.product_ids');
+var account_ids = {};
 var last_match = {};
 // terminal_data.coins = {};
 var trend_direction_up = {};
 
 product_ids.forEach((product_id) => {
-	// terminal_data.coins[product_id] = {};
+	bot[product_id] = null;
+	account_ids[product_id] = {};
 	last_match[product_id] = {};
+	// terminal_data.coins[product_id] = {};
 	trend_direction_up[product_id] = null;
+
+	launch_bot(product_id);
 });
 
 
@@ -157,24 +164,61 @@ function response_trades(message) {
 
 
 
+function launch_bot(product_id) {
+	bot[product_id] = spawn('./lib/websocket.js');
+
+	bot[product_id].send({
+		action: 'initialize',
+		product_id: product_id,
+	});
+}
+
+
+
 function open_websocket() {
 	websocket = spawn('./lib/websocket.js');
 
 	websocket
 		.on('message', function (message) {
-			if (message.getBytesReceived)
+			if (message.getAccounts)
 			{
-				// console.log(process.pid, '(websocket message) bytesReceived:', message.getBytesReceived);
+				log.info(process.pid, '(websocket message) getAccounts:', message);
+				if (message.getAccounts.accounts)
+				{
+					if (terminal_data.account === undefined)
+					{
+						terminal_data.account = {};
+					}
+					terminal_data.account.timestamp = message.getAccounts.timestamp;
+					terminal_data.account.profile_id = message.getAccounts.accounts[0].profile_id;
+
+					message.getAccounts.accounts.forEach((account) => {
+						if (account.currency === 'USD')
+						{
+							terminal_data.account.account = account;
+						}
+						else if (terminal_data.coins[`${account.currency}-USD`])
+						{
+							terminal_data.coins[`${account.currency}-USD`].account = account;
+						}
+
+						account_ids[account.currency] = account.id;
+					});
+				}
+			}
+			else if (message.getBytesReceived)
+			{
+				// log.info(process.pid, '(websocket message) bytesReceived:', message.getBytesReceived);
 				terminal_data.bytesReceived = message.getBytesReceived;
 			}
 			else if (message.isOpen !== undefined)
 			{
 				websocket_is_open = message.isOpen;
-				// console.log(process.pid, '(websocket message) isOpen:', websocket_is_open);
+				// log.info(process.pid, '(websocket message) isOpen:', websocket_is_open);
 			}
 			else if (message.getLastMatch)
 			{
-				// console.log(process.pid, '(websocket message) LastMatch:', message.getLastMatch);
+				// log.info(process.pid, '(websocket message) LastMatch:', message.getLastMatch);
 				product_ids.forEach((product_id) => {
 					terminal_data.coins[product_id].last_match = message.getLastMatch[product_id];
 				});
@@ -182,19 +226,19 @@ function open_websocket() {
 			else if (message.ProductIds)
 			{
 				product_ids = message.ProductIds
-				console.log(process.pid, '(websocket message) ProductIds:', product_ids);
+				log.info(process.pid, '(websocket message) ProductIds:', product_ids);
 			}
 			else if (message.getTrades)
 			{
-				// console.log(process.pid, '(websocket message) Trades:', message.Trades);
+				// log.info(process.pid, '(websocket message) Trades:', message.Trades);
 				response_trades(message);
 			}
 		})
 		.on('error', function(error) {
-			console.error(process.pid, 'Websocket Error:', error);
+			log.error(process.pid, 'Websocket Error:', error);
 		})
 		.on('exit', function() {
-			console.log(process.pid, 'Websocket has been terminated.');
+			log.info(process.pid, 'Websocket has been terminated.');
 		})
 }
 open_websocket();
@@ -204,8 +248,6 @@ open_websocket();
 setInterval(() => {
 	websocket
 		.send('isOpen')
-		.send('getAccount')
-		.send('getAccountHolds')
 		.send('getBytesReceived')
 		.send('getLastMatch')
 		.send('getTrades');
@@ -214,12 +256,26 @@ setInterval(() => {
 	terminal.send(terminal_data);
 
 	if (websocket_is_open === false) {
-		console.log(process.pid, 'Re-opening Websocket ...');
+		log.info(process.pid, 'Re-opening Websocket ...');
 		open_websocket();
 	}
 }, 1000);
 
 
+setInterval(() => {
+	websocket
+		.send('getAccounts')
+	
+	// product_ids.forEach((product_id) => {
+	// 	bot[product_id]
+	// 		.send({
+	// 			action: 'getAccountHolds',
+	// 			account_id: accounts[product_id.split('-')[0]],
+	// 		});
+	// });
+}, 5000);
+
+
 // if (websocket.websocket && websocket.websocket.socket) {
-// 	console.log('Bytes: ', websocket.websocket.socket.bytesReceived);
+// 	log.info('Bytes: ', websocket.websocket.socket.bytesReceived);
 // }

@@ -19,7 +19,9 @@ general:
     - LTC-USD
   url:
     api: 'https://api.gdax.com'
+    # api: 'https://api-public.sandbox.gdax.com'
     websocket: 'wss://ws-feed.gdax.com'
+    # websocket: 'wss://ws-feed-public.sandbox.gdax.com'
   terminal:
     delta: true
     theme: default
