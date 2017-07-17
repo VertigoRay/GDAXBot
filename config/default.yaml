@@ -21,7 +21,6 @@ general:
     api: 'https://api.gdax.com'
     websocket: 'wss://ws-feed.gdax.com'
   terminal:
-    auto_refresh_theme: false
     delta: true
     theme: default
 
