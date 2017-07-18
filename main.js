@@ -163,9 +163,8 @@ function response_trades(message) {
 }
 
 
-
 function launch_bot(product_id) {
-	bot[product_id] = spawn('./lib/websocket.js');
+	bot[product_id] = spawn('./lib/bot.js');
 
 	bot[product_id].send({
 		action: 'initialize',

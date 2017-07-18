@@ -45,6 +45,8 @@ The `NODE_ENV` environment variable will have to match the name of the YAML file
 
 # Starting the Bot
 
+
+
 ## Quick Start
 
 Browse the the directory with this application. Set your `NODE_ENV` and start the application.
@@ -53,14 +55,22 @@ Browse the the directory with this application. Set your `NODE_ENV` and start th
 
 ```cmd
 cd GDAX
+npm install
 SET NODE_ENV=production
 npm start
 ```
 
 ### Linux / OSX
 
-```cmd
+```bash
 cd GDAX
+npm install
 export NODE_ENV=production
 npm start
+```
+
+Alternatively, you can set the environment for just this one execution:
+
+```bash
+NODE_ENV=production npm start
 ```
