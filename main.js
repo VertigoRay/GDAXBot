@@ -4,7 +4,7 @@ const fs = require('fs');
 const Log = require('log');
 const settings = require('config');
 const spawn = require('threads').spawn;
-const stats = require('stats-lite')
+const stats = require('stats-lite');
 const sprintf = require('sprintf-js').sprintf;
 const terminal = spawn('./lib/terminal.js');
 const threads = require('threads');
@@ -81,19 +81,23 @@ var terminal_data = {
 	},
 };
 var bot = {};
+var getting_orders = false;
+var orders_cache = [];
 var websocket = null;
 var websocket_is_open = null;
 
 
 var product_ids = settings.get('general.product_ids');
 var account_ids = {};
+var calculations = {};
 var last_match = {};
 // terminal_data.coins = {};
 var trend_direction_up = {};
 
 product_ids.forEach((product_id) => {
-	bot[product_id] = null;
 	account_ids[product_id] = {};
+	bot[product_id] = null;
+	calculations[product_id] = {};
 	last_match[product_id] = {};
 	// terminal_data.coins[product_id] = {};
 	trend_direction_up[product_id] = null;
@@ -166,10 +170,20 @@ function response_trades(message) {
 function launch_bot(product_id) {
 	bot[product_id] = spawn('./lib/bot.js');
 
-	bot[product_id].send({
-		action: 'initialize',
-		product_id: product_id,
-	});
+	bot[product_id]
+		.on('message', function (message) {
+			
+		})
+		.on('error', function(error) {
+			log.error(process.pid, `Bot [${product_id}] Error:`, error);
+		})
+		.on('exit', function() {
+			log.info(process.pid, `Bot [${product_id}]  has been terminated.`);
+		})
+		.send({
+			action: 'initialize',
+			product_id: product_id,
+		});
 }
 
 
@@ -181,7 +195,7 @@ function open_websocket() {
 		.on('message', function (message) {
 			if (message.getAccounts)
 			{
-				log.info(process.pid, '(websocket message) getAccounts:', message);
+				log.info(process.pid, 'getAccounts:', message);
 				if (message.getAccounts.accounts)
 				{
 					if (terminal_data.account === undefined)
@@ -207,29 +221,107 @@ function open_websocket() {
 			}
 			else if (message.getBytesReceived)
 			{
-				// log.info(process.pid, '(websocket message) bytesReceived:', message.getBytesReceived);
+				// log.info(process.pid, 'bytesReceived:', message.getBytesReceived);
 				terminal_data.bytesReceived = message.getBytesReceived;
 			}
 			else if (message.isOpen !== undefined)
-			{
+			{ 	
 				websocket_is_open = message.isOpen;
-				// log.info(process.pid, '(websocket message) isOpen:', websocket_is_open);
+				// log.info(process.pid, 'isOpen:', websocket_is_open);
 			}
 			else if (message.getLastMatch)
 			{
-				// log.info(process.pid, '(websocket message) LastMatch:', message.getLastMatch);
+				// log.debug(process.pid, 'LastMatch:', message.getLastMatch);
 				product_ids.forEach((product_id) => {
 					terminal_data.coins[product_id].last_match = message.getLastMatch[product_id];
+					last_match[product_id] = message.getLastMatch[product_id];
 				});
+			}
+			else if (message.getOrders && message.getOrders.orders)
+			{
+				log.debug(process.pid, `getOrders orders:`, message.getOrders.orders);
+				log.debug(process.pid, `getOrders orders length:`, message.getOrders.orders.length);
+
+				message.getOrders.orders.forEach((order) => {
+					orders_cache.push(order);
+				});
+
+				log.debug(process.pid, `getOrders orders_cache (${orders_cache.length}):`, message.getOrders.after, orders_cache[orders_cache.length - 1]);
+
+
+				if (message.getOrders.orders.message) {
+					log.error(process.pid, `getOrders:`, message.getOrders.orders.message);
+				} else if (message.getOrders.orders.length === 100) {
+
+					setTimeout(() => {
+						websocket.send({
+							action: 'getOrders',
+							after: message.after,
+						});
+					}, 500);
+
+				} else {
+					// log.debug(process.pid, `getOrders:`, message);
+					log.debug(process.pid, `getOrders orders length:`, message.getOrders.orders.length);
+
+					let orders = message.getOrders.orders;
+					let sell_now = {};
+					let wait_fill = {};
+
+					product_ids.forEach((product_id) => {
+						sell_now[product_id] = [];
+						wait_fill[product_id] = [];
+					});
+
+					sell_now['total'] = [];
+					wait_fill['total'] = [];
+
+					orders.forEach((order) => {
+						// log.debug(process.pid, `getOrders order:`, order);
+						let product_id = order.product_id;
+
+						log.debug(process.pid, `getOrders last_match:`, last_match[order.product_id]);
+						let sn = order.size * (last_match[order.product_id] ? last_match[order.product_id].price : 0);
+						sell_now[order.product_id].push(sn);
+						sell_now['total'].push(sn);
+
+						let wf = order.size * order.price;
+						wait_fill[order.product_id].push(wf);
+						wait_fill['total'].push(wf);
+					});
+
+					product_ids.forEach((product_id) => {
+						let sell_now_sum = stats.sum(sell_now[product_id]);
+						let wait_fill_sum = stats.sum(wait_fill[product_id]);
+
+						terminal_data.coins[product_id].calculations = {
+							sell_now: sell_now_sum,
+							wait_fill: wait_fill_sum,
+							fees: sell_now_sum * .003,
+						}
+					});
+
+					let sell_now_sum = stats.sum(sell_now['total']);
+					let wait_fill_sum = stats.sum(wait_fill['total']);
+
+					terminal_data.account = terminal_data.account || {};
+					terminal_data.account.calculations = {
+						sell_now: sell_now_sum,
+						wait_fill: wait_fill_sum,
+						fees: sell_now_sum * .003,
+					}
+
+					getting_orders = false;
+				}
 			}
 			else if (message.ProductIds)
 			{
 				product_ids = message.ProductIds
-				log.info(process.pid, '(websocket message) ProductIds:', product_ids);
+				log.info(process.pid, 'ProductIds:', product_ids);
 			}
 			else if (message.getTrades)
 			{
-				// log.info(process.pid, '(websocket message) Trades:', message.Trades);
+				// log.info(process.pid, 'Trades:', message.Trades);
 				response_trades(message);
 			}
 		})
@@ -238,7 +330,7 @@ function open_websocket() {
 		})
 		.on('exit', function() {
 			log.info(process.pid, 'Websocket has been terminated.');
-		})
+		});
 }
 open_websocket();
 
@@ -246,10 +338,18 @@ open_websocket();
 
 setInterval(() => {
 	websocket
-		.send('isOpen')
-		.send('getBytesReceived')
-		.send('getLastMatch')
-		.send('getTrades');
+		.send({
+			action: 'isOpen'
+		})
+		.send({
+			action: 'getBytesReceived'
+		})
+		.send({
+			action: 'getLastMatch'
+		})
+		.send({
+			action: 'getTrades'
+		});
 
 
 	terminal.send(terminal_data);
@@ -261,18 +361,28 @@ setInterval(() => {
 }, 1000);
 
 
+
 setInterval(() => {
 	websocket
-		.send('getAccounts')
-	
+		.send({
+			action: 'getAccounts'
+		})
+
+	if (!getting_orders)
+	{
+		getting_orders = true;
+		websocket
+			.send({
+				action: 'getOrders',
+			});
+	}
+
 	// product_ids.forEach((product_id) => {
 	// 	bot[product_id]
-	// 		.send({
-	// 			action: 'getAccountHolds',
-	// 			account_id: accounts[product_id.split('-')[0]],
-	// 		});
 	// });
-}, 5000);
+}, 10*1000);
+
+
 
 
 // if (websocket.websocket && websocket.websocket.socket) {

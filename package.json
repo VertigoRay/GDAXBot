@@ -30,6 +30,7 @@
     "terminal-kit": "^1.11.1",
     "threads": "^0.8.1",
     "trading_bot": "^2.1.0",
+    "uuid": "^3.1.0",
     "winston": "^2.3.1"
   }
 }
