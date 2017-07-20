@@ -18,7 +18,7 @@ class StdDev {
 		trades.forEach((trade) => {
 			this.trade_prices.push(trade.price);
 
-			while (this.trade_prices.length > settings.get(`${this.product_id}.strategies.stddev.trades_n`)) {
+			while (this.trade_prices.length > settings.get(`${this.product_id}.strategies.StdDev.trades_n`)) {
 				this.trade_prices.shift();
 			}
 		});
@@ -31,7 +31,7 @@ class StdDev {
 			product_id: product_id
 		});
 
-		count = count || settings.get(`${this.product_id}.strategies.stddev.trades_n`);
+		count = count || settings.get(`${this.product_id}.strategies.StdDev.trades_n`);
 
 		let dummy_data = [];
 		let starting_id = Math.ceil(Math.random() * 100);

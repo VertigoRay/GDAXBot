@@ -31,8 +31,8 @@ var terminal_data = {
 	// },
 	coins: {
 		'BTC-USD': {
-			trending_up: (Math.floor(Math.random() * 2) ? true : false),
-			should_buy: (Math.floor(Math.random() * 2) ? true : false),
+			trending_up: undefined,
+			should_buy: undefined,
 			// account: {
 			// 	id: "a1b2c3d4",
 			// 	balance: "1.100",
@@ -47,8 +47,8 @@ var terminal_data = {
 			// },
 		},
 		'ETH-USD': {
-			trending_up: (Math.floor(Math.random() * 2) ? true : false),
-			should_buy: (Math.floor(Math.random() * 2) ? true : false),
+			trending_up: undefined,
+			should_buy: undefined,
 			// account: {
 			// 	id: "a1b2c3d4",
 			// 	balance: "1.100",
@@ -63,8 +63,8 @@ var terminal_data = {
 			// },
 		},
 		'LTC-USD': {
-			trending_up: (Math.floor(Math.random() * 2) ? true : false),
-			should_buy: (Math.floor(Math.random() * 2) ? true : false),
+			trending_up: undefined,
+			should_buy: undefined,
 			// account: {
 			// 	id: "a1b2c3d4",
 			// 	balance: "1.100",
@@ -172,7 +172,36 @@ function launch_bot(product_id) {
 
 	bot[product_id]
 		.on('message', function (message) {
-			
+			switch (message.action) {
+				case 'get':
+					let data = message.data;
+					let product_id = message.product_id;
+
+					// {
+					// 	product_id: bot.product_id,
+					// 	latest_strategy_results: {
+					// 		stddev: 0.5871246980838061,
+					// 		mean: 54.746669999999966,
+					// 		last_trade_price: '55.32',
+					// 		trades_n: 1000,
+					// 		diff_price_and_mean: 0.5733300000000341,
+					// 		is_trending_up: true,
+					// 		should_buy: false
+					// 	},
+					// 	ticker: bot.ticker,
+					// 	myorders: bot.myorders,
+					// 	last_price: bot.last_price,
+					// 	midmarket_price: bot.midmarket_price,
+					// 	orderbook: bot.orderbook,
+					// 	synced_book: bot.synced_book,
+					// }
+
+					terminal_data.coins[product_id].bot = data;
+					terminal_data.coins[product_id].should_buy = data.latest_strategy_results.should_buy;
+					terminal_data.coins[product_id].trending_up = data.latest_strategy_results.is_trending_up;
+
+					break;
+			}
 		})
 		.on('error', function(error) {
 			log.error(process.pid, `Bot [${product_id}] Error:`, error);
@@ -182,6 +211,10 @@ function launch_bot(product_id) {
 		})
 		.send({
 			action: 'initialize',
+			product_id: product_id,
+		})
+		.send({
+			action: 'start',
 			product_id: product_id,
 		});
 }
@@ -237,7 +270,7 @@ function open_websocket() {
 					last_match[product_id] = message.getLastMatch[product_id];
 				});
 			}
-			else if (message.getOrders && message.getOrders.orders)
+			else if (message.getOrders && message.getOrders.orders && typeof message.getOrders.orders === 'object')
 			{
 				log.debug(process.pid, `getOrders orders:`, message.getOrders.orders);
 				log.debug(process.pid, `getOrders orders length:`, message.getOrders.orders.length);
@@ -352,7 +385,16 @@ setInterval(() => {
 		});
 
 
+	product_ids.forEach((product_id) => {
+		bot[product_id].send({
+			action: 'get'
+		});
+	});
+
+
 	terminal.send(terminal_data);
+
+	
 
 	if (websocket_is_open === false) {
 		log.info(process.pid, 'Re-opening Websocket ...');
