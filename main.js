@@ -9,10 +9,15 @@ const sprintf = require('sprintf-js').sprintf;
 const terminal = spawn('./lib/terminal.js');
 const threads = require('threads');
 
-var log = new Log('debug', fs.createWriteStream('GDAX.log'));
+if (settings.get('general.log')) {
+	var log = new Log('debug', fs.createWriteStream('GDAX.log'));
+} else {
+	let dev_null = (process.platform === 'win32') ? 'nul' : '/dev/null'
+	var log = new Log('debug', fs.createWriteStream(dev_null));
+}
 
 var terminal_data = {
-	// account: {
+	account: {
 	// 	timestamp: new Date,
 	// 	profile_id: 'e316cb9a-TEMP-FAKE-DATA-97829c1925de',
 	// 	id: '343bb963-TEMP-FAKE-DATA-8b562d2f7a4e',
@@ -28,7 +33,7 @@ var terminal_data = {
 	// 		wait_fill: '23456.78901234',
 	// 		fees: '23.67890123',
 	// 	},
-	// },
+	},
 	coins: {
 		'BTC-USD': {
 			trending_up: undefined,
@@ -87,19 +92,20 @@ var websocket = null;
 var websocket_is_open = null;
 
 
-var product_ids = settings.get('general.product_ids');
 var account_ids = {};
 var calculations = {};
 var last_match = {};
+var trades = {};
 // terminal_data.coins = {};
 var trend_direction_up = {};
 
-product_ids.forEach((product_id) => {
+settings.get('general.product_ids').forEach((product_id) => {
 	account_ids[product_id] = {};
 	bot[product_id] = null;
 	calculations[product_id] = {};
 	last_match[product_id] = {};
 	// terminal_data.coins[product_id] = {};
+	trades[product_id] = [];
 	trend_direction_up[product_id] = null;
 
 	launch_bot(product_id);
@@ -107,71 +113,13 @@ product_ids.forEach((product_id) => {
 
 
 
-function response_trades(message) {
-	terminal_data.stream = [];
-
-	product_ids.forEach((product_id) => {
-		let price = null;
-		let price_outside_stdev = false;
-		let price_above_mean = false;
-
-		if (last_match && last_match[product_id]) {
-			price = parseFloat(last_match[product_id].price);
-		}
-
-		if (price) {
-			let stdev = stats.stdev(message.getTrades[product_id]);
-			let mean = stats.mean(message.getTrades[product_id]);
-
-			let difference = mean - price;
-			let absolute_value_of_difference = Math.abs(difference);
-
-			if (difference == absolute_value_of_difference) {
-				// Our price is below the mean
-				price_above_mean = false;
-			} else {
-				// Our price is above the mean
-				price_above_mean = true;
-			}
-
-			if (absolute_value_of_difference > stdev) {
-				// Trend has changed directions.
-				price_outside_stdev = true;
-			}
-
-			if (price_above_mean && price_outside_stdev) {
-				// Price is significantly high to consider us trending up
-				trend_direction_up[product_id] = true;
-			} else if (!price_above_mean && price_outside_stdev) {
-				// Price is significantly low to consider us trending down
-				trend_direction_up[product_id] = false;
-			}
-
-
-			let stream = {
-				product_id: product_id,
-				num_trades: parseFloat(message.getTrades[product_id].length),
-				stdev: parseFloat(stdev),
-				mean: parseFloat(mean),
-				price: parseFloat(price),
-				difference: parseFloat(difference),
-				absolute_value_of_difference: parseFloat(absolute_value_of_difference),
-				price_up: undefined,
-				price_above_mean: price_above_mean,
-				price_outside_stdev: price_outside_stdev,
-				trend_direction_up: trend_direction_up[product_id],
-			};
-			terminal_data.stream.push(stream);
-		}
-	});
-}
-
-
 function launch_bot(product_id) {
 	bot[product_id] = spawn('./lib/bot.js');
 
 	bot[product_id]
 		.on('message', function (message) {
+			log.info(process.pid, 'bot message', message.action, message);
+
 			switch (message.action) {
 				case 'get':
 					let data = message.data;
@@ -226,136 +174,154 @@ function open_websocket() {
 
 	websocket
 		.on('message', function (message) {
-			if (message.getAccounts)
-			{
-				log.info(process.pid, 'getAccounts:', message);
-				if (message.getAccounts.accounts)
-				{
-					if (terminal_data.account === undefined)
+			log.info(process.pid, 'websocket message', message.action, message);
+
+			switch (message.action) {
+				case 'getAccounts':
+					if (message.data && message.data.message) {
+						log.error(process.pid, message.action, message.data.message);
+					} else if (message.data)
 					{
-						terminal_data.account = {};
-					}
-					terminal_data.account.timestamp = message.getAccounts.timestamp;
-					terminal_data.account.profile_id = message.getAccounts.accounts[0].profile_id;
-
-					message.getAccounts.accounts.forEach((account) => {
-						if (account.currency === 'USD')
+						if (terminal_data.account === undefined)
 						{
-							terminal_data.account.account = account;
+							terminal_data.account = {};
 						}
-						else if (terminal_data.coins[`${account.currency}-USD`])
-						{
-							terminal_data.coins[`${account.currency}-USD`].account = account;
-						}
-
-						account_ids[account.currency] = account.id;
-					});
-				}
-			}
-			else if (message.getBytesReceived)
-			{
-				// log.info(process.pid, 'bytesReceived:', message.getBytesReceived);
-				terminal_data.bytesReceived = message.getBytesReceived;
-			}
-			else if (message.isOpen !== undefined)
-			{ 	
-				websocket_is_open = message.isOpen;
-				// log.info(process.pid, 'isOpen:', websocket_is_open);
-			}
-			else if (message.getLastMatch)
-			{
-				// log.debug(process.pid, 'LastMatch:', message.getLastMatch);
-				product_ids.forEach((product_id) => {
-					terminal_data.coins[product_id].last_match = message.getLastMatch[product_id];
-					last_match[product_id] = message.getLastMatch[product_id];
-				});
-			}
-			else if (message.getOrders && message.getOrders.orders && typeof message.getOrders.orders === 'object')
-			{
-				log.debug(process.pid, `getOrders orders:`, message.getOrders.orders);
-				log.debug(process.pid, `getOrders orders length:`, message.getOrders.orders.length);
-
-				message.getOrders.orders.forEach((order) => {
-					orders_cache.push(order);
-				});
-
-				log.debug(process.pid, `getOrders orders_cache (${orders_cache.length}):`, message.getOrders.after, orders_cache[orders_cache.length - 1]);
+						terminal_data.account.timestamp = message.timestamp;
+						terminal_data.account.profile_id = message.data[0].profile_id;
 
 
-				if (message.getOrders.orders.message) {
-					log.error(process.pid, `getOrders:`, message.getOrders.orders.message);
-				} else if (message.getOrders.orders.length === 100) {
+						message.data.forEach((account) => {
+							if (account.currency === 'USD')
+							{
+								terminal_data.account.account = account;
+							}
+							else if (terminal_data.coins[`${account.currency}-USD`])
+							{
+								terminal_data.coins[`${account.currency}-USD`].account = account;
+							}
 
-					setTimeout(() => {
-						websocket.send({
-							action: 'getOrders',
-							after: message.after,
+							account_ids[account.currency] = account.id;
 						});
-					}, 500);
+					}
 
-				} else {
-					// log.debug(process.pid, `getOrders:`, message);
-					log.debug(process.pid, `getOrders orders length:`, message.getOrders.orders.length);
+					break;
+				case 'getBytesReceived':
+					// log.info(process.pid, 'bytesReceived:', message.getBytesReceived);
+					terminal_data.bytesReceived = message.data;
 
-					let orders = message.getOrders.orders;
-					let sell_now = {};
-					let wait_fill = {};
+					break;
+				case 'isOpen':
+					// log.info(process.pid, 'isOpen:', websocket_is_open);
 
-					product_ids.forEach((product_id) => {
-						sell_now[product_id] = [];
-						wait_fill[product_id] = [];
+					if (message.isOpen !== undefined)
+						websocket_is_open = message.data;
+
+					break;
+				case 'getLastMatch':
+					// log.debug(process.pid, 'LastMatch:', message.getLastMatch);
+					settings.get('general.product_ids').forEach((product_id) => {
+						terminal_data.coins[product_id].last_match = message.data[product_id];
+						last_match[product_id] = message.data[product_id];
 					});
 
-					sell_now['total'] = [];
-					wait_fill['total'] = [];
+					break;
+				case 'getOrders':
+					if (message.data && typeof message.data === 'object') {
+						// log.debug(process.pid, `getOrders orders:`, message.getOrders.orders);
+						// log.debug(process.pid, `getOrders orders length:`, message.getOrders.orders.length);
 
-					orders.forEach((order) => {
-						// log.debug(process.pid, `getOrders order:`, order);
-						let product_id = order.product_id;
+						// cache all the orders that we've received.
+						// Will possibly multiple pages.
+						message.data.forEach((order) => {
+							orders_cache.push(order);
+						});
 
-						log.debug(process.pid, `getOrders last_match:`, last_match[order.product_id]);
-						let sn = order.size * (last_match[order.product_id] ? last_match[order.product_id].price : 0);
-						sell_now[order.product_id].push(sn);
-						sell_now['total'].push(sn);
+						log.debug(process.pid, 'websocket message', message.action, `orders_cache (${orders_cache.length}):`, orders_cache[orders_cache.length - 1]);
 
-						let wf = order.size * order.price;
-						wait_fill[order.product_id].push(wf);
-						wait_fill['total'].push(wf);
-					});
 
-					product_ids.forEach((product_id) => {
-						let sell_now_sum = stats.sum(sell_now[product_id]);
-						let wait_fill_sum = stats.sum(wait_fill[product_id]);
+						if (message.data.message) {
+							log.error(process.pid, message.action, message.data.message);
+						} else if (message.data.length === 100) {
+							log.debug(process.pid, 'websocket message', message.action, `Max Orders Received; get next page.`);
 
-						terminal_data.coins[product_id].calculations = {
-							sell_now: sell_now_sum,
-							wait_fill: wait_fill_sum,
-							fees: sell_now_sum * .003,
+							setTimeout(() => {
+								websocket.send({
+									action: 'getOrders',
+									next_page: message.next_page,
+								});
+							}, 500);
+
+						} else {
+							log.debug(process.pid, 'websocket message', message.action, `Processing all received orders ...`);
+
+							let orders = orders_cache;
+							let sell_now = {};
+							let wait_fill = {};
+
+							settings.get('general.product_ids').forEach((product_id) => {
+								sell_now[product_id] = [];
+								wait_fill[product_id] = [];
+							});
+
+							sell_now['total'] = [];
+							wait_fill['total'] = [];
+
+							orders.forEach((order) => {
+								// log.debug(process.pid, `getOrders order:`, order);
+								let product_id = order.product_id;
+
+								log.debug(process.pid, `getOrders last_match:`, last_match[order.product_id]);
+								let sn = order.size * (last_match[order.product_id] ? last_match[order.product_id].price : 0);
+								sell_now[order.product_id].push(sn);
+								sell_now['total'].push(sn);
+
+								let wf = order.size * order.price;
+								wait_fill[order.product_id].push(wf);
+								wait_fill['total'].push(wf);
+							});
+
+							settings.get('general.product_ids').forEach((product_id) => {
+								let sell_now_sum = stats.sum(sell_now[product_id]);
+								let wait_fill_sum = stats.sum(wait_fill[product_id]);
+
+								terminal_data.coins[product_id].calculations = {
+									sell_now: sell_now_sum,
+									wait_fill: wait_fill_sum,
+									fees: sell_now_sum * .003,
+								}
+							});
+
+							let sell_now_sum = stats.sum(sell_now['total']);
+							let wait_fill_sum = stats.sum(wait_fill['total']);
+
+							terminal_data.account = terminal_data.account || {};
+							terminal_data.account.calculations = {
+								sell_now: sell_now_sum,
+								wait_fill: wait_fill_sum,
+								fees: sell_now_sum * .003,
+							}
+
+							orders_cache = [];
+							getting_orders = false;
+						}
+					} else {
+						log.debug(process.pid, 'websocket message', message.action, `No orders received.`);
+						getting_orders = false;
+					}
+
+					break;
+				case 'getTrades':
+					log.debug(process.pid, 'websocket message', message.action, message.data);
+					settings.get('general.product_ids').forEach((product_id) => {
+						trades[product_id] = [];
+
+						while (message.data[product_id].length > 0) {
+							trades[product_id].push(message.data[product_id].shift());
 						}
 					});
 
-					let sell_now_sum = stats.sum(sell_now['total']);
-					let wait_fill_sum = stats.sum(wait_fill['total']);
-
-					terminal_data.account = terminal_data.account || {};
-					terminal_data.account.calculations = {
-						sell_now: sell_now_sum,
-						wait_fill: wait_fill_sum,
-						fees: sell_now_sum * .003,
-					}
-
-					getting_orders = false;
-				}
-			}
-			else if (message.ProductIds)
-			{
-				product_ids = message.ProductIds
-				log.info(process.pid, 'ProductIds:', product_ids);
-			}
-			else if (message.getTrades)
-			{
-				// log.info(process.pid, 'Trades:', message.Trades);
-				response_trades(message);
+					log.debug(process.pid, 'websocket message', message.action, trades);
+					break;
 			}
 		})
 		.on('error', function(error) {
@@ -370,31 +336,69 @@ open_websocket();
 
 
 setInterval(() => {
+	let isOpen = {
+		action: 'isOpen',
+		timestamp: new Date,
+	};
+	let getBytesReceived = {
+		action: 'getBytesReceived',
+		timestamp: new Date,
+	};
+	let getLastMatch = {
+		action: 'getLastMatch',
+		timestamp: new Date,
+	};
+	let getTrades = {
+		action: 'getTrades',
+		timestamp: new Date,
+	};
+
+	log.info(process.pid, 'websocket send', isOpen);
+	log.info(process.pid, 'websocket send', getBytesReceived);
+	log.info(process.pid, 'websocket send', getLastMatch);
+	log.info(process.pid, 'websocket send', getTrades);
+
 	websocket
-		.send({
-			action: 'isOpen'
-		})
-		.send({
-			action: 'getBytesReceived'
-		})
-		.send({
-			action: 'getLastMatch'
-		})
-		.send({
-			action: 'getTrades'
-		});
+		.send(isOpen)
+		.send(getBytesReceived)
+		.send(getLastMatch)
+		.send(getTrades);
 
 
-	product_ids.forEach((product_id) => {
-		bot[product_id].send({
-			action: 'get'
-		});
+	log.info(process.pid, 'bots send PREP', trades);
+
+	let send_trades = {};
+	settings.get('general.product_ids').forEach((product_id) => {
+		send_trades[product_id] = []
+
+		while (trades[product_id].length > 0) {
+			send_trades[product_id].push(trades[product_id].shift());
+		};
 	});
 
 
-	terminal.send(terminal_data);
+	settings.get('general.product_ids').forEach((product_id) => {
+		let add_trades = {
+			action: 'add_trades',
+			data: send_trades[product_id],
+			timestamp: new Date,
+		};
+		let get = {
+			action: 'get',
+			timestamp: new Date,
+		};
 
-	
+		log.info(process.pid, `${product_id} bot send`, add_trades);
+		log.info(process.pid, `${product_id} bot send`, get);
+
+		bot[product_id]
+			.send(add_trades)
+			.send(get);
+	});
+
+
+	log.info(process.pid, 'terminal send', terminal_data);
+	terminal.send(terminal_data);
 
 	if (websocket_is_open === false) {
 		log.info(process.pid, 'Re-opening Websocket ...');
@@ -405,21 +409,31 @@ setInterval(() => {
 
 
 setInterval(() => {
+	let getAccounts = {
+		action: 'getAccounts',
+		timestamp: new Date,
+	};
+
+	log.info(process.pid, 'websocket send', getAccounts);
+
 	websocket
-		.send({
-			action: 'getAccounts'
-		})
+		.send(getAccounts)
 
 	if (!getting_orders)
 	{
+		let getOrders = {
+			action: 'getOrders',
+			timestamp: new Date,
+		};
+
+		log.info(process.pid, 'websocket send', getOrders);
+
 		getting_orders = true;
 		websocket
-			.send({
-				action: 'getOrders',
-			});
+			.send(getOrders);
 	}
 
-	// product_ids.forEach((product_id) => {
+	// settings.get('general.product_ids').forEach((product_id) => {
 	// 	bot[product_id]
 	// });
 }, 10*1000);

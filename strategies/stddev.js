@@ -15,13 +15,14 @@ class StdDev {
 	}
 
 	addTrades(trades) {
-		trades.forEach((trade) => {
-			this.trade_prices.push(trade.price);
+		for (let trade in trades) {
+			// console.log('add trade price:', parseFloat(trades[trade].price.toString()))
+			this.trade_prices.push(parseFloat(trades[trade].toString()));
 
 			while (this.trade_prices.length > settings.get(`${this.product_id}.strategies.StdDev.trades_n`)) {
 				this.trade_prices.shift();
 			}
-		});
+		}
 	}
 
 	generateDummyData(product_id, count) {
@@ -47,18 +48,7 @@ class StdDev {
 		}
 
 		for (let i = 0; i < count; i++) {
-			dummy_data.push({
-				type: 'match',
-				trade_id: starting_id + i,
-				sequence: (starting_id * starting_id) + i,
-				maker_order_id: uuidv4(),
-				taker_order_id: uuidv4(),
-				time: new Date,
-				product_id: this.product_id,
-				size: String(Math.random() * 10),
-				price: parseFloat((Math.floor(Math.random() * 2) ? starting_price + Math.random() * 2 : starting_price + Math.random() * 2)).toFixed(2),
-				side: (Math.floor(Math.random() * 2) ? 'buy' : 'sell'),
-			});
+			dummy_data.push(parseFloat((Math.floor(Math.random() * 2) ? starting_price + Math.random() * 2 : starting_price + Math.random() * 2)).toFixed(2));
 		}
 
 		this.add({
