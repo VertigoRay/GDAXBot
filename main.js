@@ -10,10 +10,10 @@ const terminal = spawn('./lib/terminal.js');
 const threads = require('threads');
 
 if (settings.get('general.log')) {
-	var log = new Log('debug', fs.createWriteStream('GDAX.log'));
+	var log = new Log(settings.get('general.log_level'), fs.createWriteStream('GDAX.log'));
 } else {
 	let dev_null = (process.platform === 'win32') ? 'nul' : '/dev/null'
-	var log = new Log('debug', fs.createWriteStream(dev_null));
+	var log = new Log(settings.get('general.log_level'), fs.createWriteStream(dev_null));
 }
 
 var terminal_data = {
@@ -117,7 +117,7 @@ function launch_bot(product_id) {
 	bot[product_id] = spawn('./lib/bot.js');
 
 	bot[product_id]
-		.on('message', function (message) {
+		.on('message', (message) => {
 			log.info(process.pid, 'bot message', message.action, message);
 
 			switch (message.action) {
@@ -147,6 +147,28 @@ function launch_bot(product_id) {
 					terminal_data.coins[product_id].bot = data;
 					terminal_data.coins[product_id].should_buy = data.latest_strategy_results.should_buy;
 					terminal_data.coins[product_id].trending_up = data.latest_strategy_results.is_trending_up;
+
+					break;
+			}
+		})
+		.on('progress', (progress) => {
+			log.info(process.pid, 'bot progress', progress.action, progress);
+
+			switch (progress.action) {
+				case 'buy_confirmed':
+					websocket.send({
+						action: 'buy_confirmed',
+						data: progress.data,
+						timestamp: new Date,
+					});
+
+					break;
+				case 'sell_confirmed':
+					websocket.send({
+						action: 'sell_confirmed',
+						data: progress.data,
+						timestamp: new Date,
+					});
 
 					break;
 			}
@@ -254,6 +276,26 @@ function open_websocket() {
 						} else {
 							log.debug(process.pid, 'websocket message', message.action, `Processing all received orders ...`);
 
+							websocket.send({
+								action: 'add_orders',
+								data: orders_cache,
+								timestamp: new Date,
+							});
+
+							settings.get('general.product_ids').forEach((product_id) => {
+								let add_orders = {
+									action: 'add_orders',
+									product_id: product_id,
+									data: orders_cache,
+									timestamp: new Date,
+								};
+
+								log.info(process.pid, `${product_id} bot send`, add_orders);
+
+								bot[product_id]
+									.send(add_orders);
+							});
+
 							let orders = orders_cache;
 							let sell_now = {};
 							let wait_fill = {};
@@ -321,6 +363,20 @@ function open_websocket() {
 					});
 
 					log.debug(process.pid, 'websocket message', message.action, trades);
+					break;
+			}
+		})
+		.on('progress', (progress) => {
+			log.info(process.pid, 'websocket progress', progress.action, progress);
+
+			switch (progress.action) {
+				case 'message_done':
+					bot[progress.data.product_id].send({
+						action: 'sell',
+						data: progress.data,
+						timestamp: new Date,
+					});
+
 					break;
 			}
 		})

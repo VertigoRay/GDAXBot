@@ -17,6 +17,7 @@
     "blessed": "^0.1.81",
     "config": "^1.26.1",
     "drawille": "^1.1.0",
+    "events": "^1.1.1",
     "fs": "0.0.1-security",
     "gdax": "~0.4.2",
     "glob": "^7.1.2",

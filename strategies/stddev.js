@@ -1,9 +1,14 @@
+'use strict';
+
 const settings = require('config');
 const stats = require('stats-lite');
+
+
 
 class StdDev {
 	constructor() {
 		this.trade_prices = [];
+		this.direction_up = undefined;
 	}
 
 	add(add) {
@@ -65,9 +70,25 @@ class StdDev {
 		}
 
 		strategy.diff_price_and_mean = strategy.last_trade_price - strategy.mean;
-		strategy.is_trending_up = (Math.abs(strategy.diff_price_and_mean) === strategy.diff_price_and_mean) ? true : false;
+		strategy.direction = (Math.abs(strategy.diff_price_and_mean) === strategy.diff_price_and_mean) ? 'Up' : 'Down';
 
-		strategy.should_buy = (strategy.diff_price_and_mean > strategy.stddev) ? true : false;
+		// Only change directions if we exceed the stddev; positive or negative.
+		if (
+			(Math.abs(strategy.diff_price_and_mean) > strategy.stddev)
+			&& (Math.abs(strategy.diff_price_and_mean) === strategy.diff_price_and_mean)
+		) {
+			this.trending_up = true;
+		} else if (
+			(Math.abs(strategy.diff_price_and_mean) > strategy.stddev)
+			&& (Math.abs(strategy.diff_price_and_mean) !== strategy.diff_price_and_mean)
+		) {
+			this.trending_up = false; //literally: direction down
+		}
+
+		strategy.is_trending_up = this.trending_up;
+
+		// Buy as long as the overall direction is up.
+		strategy.should_buy = this.trending_up;
 
 		return strategy;
 	}
