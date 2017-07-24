@@ -25,7 +25,7 @@ general:
   terminal:
     delta: true
     theme: default
-  log: false
+  log: off
   log_level: warning
 
 
@@ -34,7 +34,7 @@ account:
     key: null
     secret: null
     passphrase: null
-  initial_investment: null
+  initial_investment: 0.00
 
 
 BTC-USD:
