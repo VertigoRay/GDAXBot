@@ -313,13 +313,16 @@ function open_websocket() {
 								let product_id = order.product_id;
 
 								log.debug(process.pid, `getOrders last_match:`, last_match[order.product_id]);
+
 								let sn = order.size * (last_match[order.product_id] ? last_match[order.product_id].price : 0);
-								sell_now[order.product_id].push(sn);
 								sell_now['total'].push(sn);
+								if (order.product_id in sell_now)
+									sell_now[order.product_id].push(sn);
 
 								let wf = order.size * order.price;
-								wait_fill[order.product_id].push(wf);
 								wait_fill['total'].push(wf);
+								if (order.product_id in wait_fill)
+									wait_fill[order.product_id].push(wf);
 							});
 
 							settings.get('general.product_ids').forEach((product_id) => {
