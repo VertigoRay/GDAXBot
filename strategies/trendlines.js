@@ -72,12 +72,13 @@ class TrendLines {
 		}
 
 		var is_trending_up = [];
+		var should_buy = [];
 
 		for (let i=0; i < this.trend_lines.length; i++) {
 			let trend_line_id = i + 1;
 
 			strategy[`trend_${trend_line_id}_buy_on_up`] = this.buy_on_up[i];
-			strategy[`trend_${trend_line_id}_trades_n`] = this.trades_n[i];
+			strategy[`trend_${trend_line_id}_trades_n`] = this.trend_lines[i].length - 1;
 
 			let real_prev_trend_line = this.trend_lines[i].slice(0, this.trend_lines[i].length - 1);
 			strategy[`trend_${trend_line_id}_prev_mean`] = stats.mean(real_prev_trend_line);
@@ -89,10 +90,12 @@ class TrendLines {
 			let trending_up = strategy[`trend_${trend_line_id}_mean`] > strategy[`trend_${trend_line_id}_prev_mean`];
 			strategy[`trend_${trend_line_id}_trending_up`] = trending_up;
 			is_trending_up.push(trending_up);
+
+			should_buy.push(settings.get(`${this.product_id}.strategies.TrendLines.trend_${trend_line_id}_buy_on_up`) ? trending_up : true);
 		}
 
 		strategy.is_trending_up = is_trending_up.reduce((a, b) => { return a && b; });
-		strategy.should_buy = strategy.is_trending_up;
+		strategy.should_buy = should_buy.reduce((a, b) => { return a && b; });
 
 		return strategy;
 	}
