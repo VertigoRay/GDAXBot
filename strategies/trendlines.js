@@ -4,15 +4,19 @@ const settings = require('config');
 const stats = require('stats-lite');
 
 
-
 class TrendLines {
 	constructor() {
-		this.trade_prices = [];
+		this.trend_lines = [];
+		this.buy_on_up = [];
+		this.trades_n = [];
 	}
 
 	add(add) {
-		if (typeof add !== 'object')
+		if (typeof add !== 'object' && Object.prototype.toString.call(add) === '[object Object]')
 			throw new Error(`The parameter 'add' should be an object; not a ${typeof add}.`);
+
+		if (add.trade)
+			this.addTrades([add.trade]);
 
 		if (add.trades)
 			this.addTrades(add.trades);
@@ -20,23 +24,25 @@ class TrendLines {
 
 	addTrades(trades) {
 		for (let trade in trades) {
-			// console.log('add trade price:', parseFloat(trades[trade].price.toString()))
-			this.trade_prices.push(parseFloat(trades[trade].toString()));
+			for (let i=0; i < this.trend_lines.length; i++) {
+				this.trend_lines[i].push(parseFloat(trades[trade].toString()));
 
-			while (this.trade_prices.length > settings.get(`${this.product_id}.strategies.StdDev.trades_n`)) {
-				this.trade_prices.shift();
+				settings.get(`${this.product_id}.strategies.TrendLines.trendlines_n`)
+
+				while (this.trend_lines[i].length > this.trades_n[i] + 1)
+					this.trend_lines[i].shift();
 			}
 		}
 	}
 
 	generateDummyData(product_id, count) {
-		const uuidv4 = require('uuid/v4');
+		product_id = product_id || settings.get('general.product_ids')[Math.floor(Math.random() * settings.get('general.product_ids').length)];
 
 		this.set({
 			product_id: product_id
 		});
 
-		count = count || settings.get(`${this.product_id}.strategies.StdDev.trades_n`);
+		count = count || Math.max.apply(null, this.trades_n) + 1;
 
 		let dummy_data = [];
 		let starting_id = Math.ceil(Math.random() * 100);
@@ -51,9 +57,8 @@ class TrendLines {
 				starting_price = Math.random() * 100;
 		}
 
-		for (let i = 0; i < count; i++) {
+		for (let i = 0; i < count; i++)
 			dummy_data.push(parseFloat((Math.floor(Math.random() * 2) ? starting_price + Math.random() * 2 : starting_price + Math.random() * 2)).toFixed(2));
-		}
 
 		this.add({
 			trades: dummy_data
@@ -62,32 +67,32 @@ class TrendLines {
 
 	get() {
 		let strategy = {
-			stddev: stats.stdev(this.trade_prices),
-			mean: stats.mean(this.trade_prices),
-			last_trade_price: this.trade_prices[this.trade_prices.length - 1],
-			trades_n: this.trade_prices.length,
+			trendlines_n: settings.get(`${this.product_id}.strategies.TrendLines.trendlines_n`),
+			last_trade_price: this.trend_lines[0][this.trend_lines[0].length - 1],
 		}
 
-		strategy.diff_price_and_mean = strategy.last_trade_price - strategy.mean;
-		strategy.direction = (Math.abs(strategy.diff_price_and_mean) === strategy.diff_price_and_mean) ? 'Up' : 'Down';
+		var is_trending_up = [];
 
-		// Only change directions if we exceed the stddev; positive or negative.
-		if (
-			(Math.abs(strategy.diff_price_and_mean) > strategy.stddev)
-			&& (Math.abs(strategy.diff_price_and_mean) === strategy.diff_price_and_mean)
-		) {
-			this.trending_up = true;
-		} else if (
-			(Math.abs(strategy.diff_price_and_mean) > strategy.stddev)
-			&& (Math.abs(strategy.diff_price_and_mean) !== strategy.diff_price_and_mean)
-		) {
-			this.trending_up = false; //literally: direction down
+		for (let i=0; i < this.trend_lines.length; i++) {
+			let trend_line_id = i + 1;
+
+			strategy[`trend_${trend_line_id}_buy_on_up`] = this.buy_on_up[i];
+			strategy[`trend_${trend_line_id}_trades_n`] = this.trades_n[i];
+
+			let real_prev_trend_line = this.trend_lines[i].slice(0, this.trend_lines[i].length - 1);
+			strategy[`trend_${trend_line_id}_prev_mean`] = stats.mean(real_prev_trend_line);
+
+			let real_trend_line = this.trend_lines[i];
+			real_trend_line.shift();
+			strategy[`trend_${trend_line_id}_mean`] = stats.mean(real_trend_line);
+
+			let trending_up = strategy[`trend_${trend_line_id}_mean`] > strategy[`trend_${trend_line_id}_prev_mean`];
+			strategy[`trend_${trend_line_id}_trending_up`] = trending_up;
+			is_trending_up.push(trending_up);
 		}
 
-		strategy.is_trending_up = this.trending_up;
-
-		// Buy as long as the overall direction is up.
-		strategy.should_buy = this.trending_up;
+		strategy.is_trending_up = is_trending_up.reduce((a, b) => { return a && b; });
+		strategy.should_buy = strategy.is_trending_up;
 
 		return strategy;
 	}
@@ -106,10 +111,20 @@ class TrendLines {
 
 
 			this.product_id = set.product_id
+
+			for (let i=0; i < settings.get(`${this.product_id}.strategies.TrendLines.trendlines_n`); i++) {
+				this.trend_lines[i] = [];
+
+				let trend_line_id = i + 1;
+				
+				this.buy_on_up[i] = settings.get(`${this.product_id}.strategies.TrendLines.trend_${trend_line_id}_buy_on_up`);
+				this.trades_n[i] = settings.get(`${this.product_id}.strategies.TrendLines.trend_${trend_line_id}_trades_n`);
+			}
 		}
 	}
 }
 
-module.exports = StdDev;
+module.exports = TrendLines;
 
-// const stddev = require('./strategies/stddev.js')
+// const TrendLines = require('./strategies/trendlines.js');
+// const trendlines = new TrendLines();

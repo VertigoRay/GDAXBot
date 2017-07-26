@@ -31,8 +31,6 @@ class StdDev {
 	}
 
 	generateDummyData(product_id, count) {
-		const uuidv4 = require('uuid/v4');
-
 		this.set({
 			product_id: product_id
 		});

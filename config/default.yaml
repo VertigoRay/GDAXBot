@@ -55,19 +55,12 @@ BTC-USD:
   strategies:
     StdDev:
       trades_n: 1000
-    trend_lines:
-      buy_on_trend_long_up: true
-      buy_on_trend_short_up: true
-      trend_trade_long_ct: '2000'
-      trend_trade_short_ct: '100'
-      buy_amount: '0.03'
-      buy_trigger: '0.50'
-      cancel_after: min
-      sell_amount: '0.01'
-      sell_above_buy: '0.01'
-      stop_loss: '1'
-      spread_n: '3'
-      spread_v: '0.50'
+    TrendLines:
+      trendlines_n: 2
+      trend_1_buy_on_up: true
+      trend_1_trades_n: 1000
+      trend_2_buy_on_up: true
+      trend_2_trades_n: 100
 
 
 ETH-USD:
@@ -88,19 +81,12 @@ ETH-USD:
   strategies:
     StdDev:
       trades_n: 1000
-    trend_lines:
-      buy_on_trend_long_up: true
-      buy_on_trend_short_up: true
-      trend_trade_long_ct: '1000'
-      trend_trade_short_ct: '100'
-      buy_amount: '0.01'
-      buy_trigger: '0.01'
-      cancel_after: min
-      sell_amount: '0.01'
-      sell_above_buy: '0.03'
-      stop_loss: '1'
-      spread_n: '3'
-      spread_v: '0.15'
+    TrendLines:
+      trendlines_n: 2
+      trend_1_buy_on_up: true
+      trend_1_trades_n: 1000
+      trend_2_buy_on_up: true
+      trend_2_trades_n: 100
 
 LTC-USD:
   trade_enabled: true
@@ -120,16 +106,9 @@ LTC-USD:
   strategies:
     StdDev:
       trades_n: 1000
-    trend_lines:
-      buy_on_trend_long_up: true
-      buy_on_trend_short_up: true
-      trend_trade_long_ct: '1000'
-      trend_trade_short_ct: '100'
-      buy_amount: '1.00'
-      buy_trigger: '0.00'
-      cancel_after: min
-      sell_amount: '1.00'
-      sell_above_buy: '0.02'
-      stop_loss: '1'
-      spread_n: '3'
-      spread_v: '0.01'
+    TrendLines:
+      trendlines_n: 2
+      trend_1_buy_on_up: true
+      trend_1_trades_n: 1000
+      trend_2_buy_on_up: true
+      trend_2_trades_n: 100
