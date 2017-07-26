@@ -80,14 +80,15 @@ class TrendLines {
 			strategy[`trend_${trend_line_id}_buy_on_up`] = this.buy_on_up[i];
 			strategy[`trend_${trend_line_id}_trades_n`] = this.trend_lines[i].length - 1;
 
-			let real_prev_trend_line = this.trend_lines[i].slice(0, this.trend_lines[i].length - 1);
+			let real_prev_trend_line = this.trend_lines[i].slice(0);
+			real_prev_trend_line = real_prev_trend_line.slice(0, this.trend_lines[i].length - 1);
 			strategy[`trend_${trend_line_id}_prev_mean`] = stats.mean(real_prev_trend_line);
 
-			let real_trend_line = this.trend_lines[i];
+			let real_trend_line = this.trend_lines[i].slice(0);
 			real_trend_line.shift();
 			strategy[`trend_${trend_line_id}_mean`] = stats.mean(real_trend_line);
 
-			let trending_up = strategy[`trend_${trend_line_id}_mean`] > strategy[`trend_${trend_line_id}_prev_mean`];
+			let trending_up = strategy[`trend_${trend_line_id}_mean`] > strategy[`trend_${trend_line_id}_prev_mean`] ? true : false;
 			strategy[`trend_${trend_line_id}_trending_up`] = trending_up;
 			is_trending_up.push(trending_up);
 
