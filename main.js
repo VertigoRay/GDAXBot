@@ -1,8 +1,9 @@
 'use strict';
 
+const _ = require('lodash');
 const fs = require('fs');
 const Log = require('log');
-const settings = require('config');
+const settings = require('./lib/settings.js');
 const spawn = require('threads').spawn;
 const stats = require('stats-lite');
 const sprintf = require('sprintf-js').sprintf;
@@ -16,196 +17,148 @@ if (settings.get('general.log')) {
 	var log = new Log(settings.get('general.log_level'), fs.createWriteStream(dev_null));
 }
 
-var terminal_data = {
-	account: {
-	// 	timestamp: new Date,
-	// 	profile_id: 'e316cb9a-TEMP-FAKE-DATA-97829c1925de',
-	// 	id: '343bb963-TEMP-FAKE-DATA-8b562d2f7a4e',
-	// 	account: {
-	// 		id: "a1b2c3d4",
-	// 		balance: "1.100",
-	// 		holds: "0.100",
-	// 		available: "1.00",
-	// 		currency: "USD"
-	// 	},
-	// 	calculations: {
-	// 		sell_now: '12345.67890123',
-	// 		wait_fill: '23456.78901234',
-	// 		fees: '23.67890123',
-	// 	},
-	},
-	coins: {
-		'BTC-USD': {
-			trending_up: undefined,
-			should_buy: undefined,
-			// account: {
-			// 	id: "a1b2c3d4",
-			// 	balance: "1.100",
-			// 	hold: "0.100",
-			// 	available: "1.00",
-			// 	currency: "BTC"
-			// },
-			// calculations: {
-			// 	sell_now: '12345.67890123',
-			// 	wait_fill: '23456.78901234',
-			// 	fees: '23.67890123',
-			// },
-		},
-		'ETH-USD': {
-			trending_up: undefined,
-			should_buy: undefined,
-			// account: {
-			// 	id: "a1b2c3d4",
-			// 	balance: "1.100",
-			// 	hold: "0.100",
-			// 	available: "1.00",
-			// 	currency: "ETH"
-			// },
-			// calculations: {
-			// 	sell_now: '12345.67890123',
-			// 	wait_fill: '23456.78901234',
-			// 	fees: '23.67890123',
-			// },
-		},
-		'LTC-USD': {
-			trending_up: undefined,
-			should_buy: undefined,
-			// account: {
-			// 	id: "a1b2c3d4",
-			// 	balance: "1.100",
-			// 	hold: "0.100",
-			// 	available: "1.00",
-			// 	currency: "LTC"
-			// },
-			// calculations: {
-			// 	sell_now: '12345.67890123',
-			// 	wait_fill: '23456.78901234',
-			// 	fees: '23.67890123',
-			// },
-		},
-	},
-};
 
-
-
-
-
-
-
-var coins = {};
-
-['USD','EUR'].forEach(product_id => {
-    coins[`${product_id}`] = {};
-    coins[`${product_id}_listener`] = function(val) {
-        console.log(`${product_id} - ${val}`);
-    };
-
-    Object.defineProperty(coins, product_id, {
-        set: function(val) {
-        	console.log(val);
-        	console.log(this[`${product_id}`]);
-
-        	// if (!objectsAreEqual(val, this[`${product_id}`])) {
-	        //     this[`${product_id}`] = val;
-	        //     this[`${product_id}_listener`](val);
-        	// }
-        },
-        get: function() {
-            return this[`${product_id}`];
-        },
-    });
-});
-
-coins.USD = 10;
-coins.EUR = 100;
-console.log(`USD ${coins.USD}, EUR ${coins.EUR}`);
-coins;
-
-
-
-	
 
 class Data {
 	constructor() {
-		this._account = {};
+		// var terminal_data = {
+		// 	account: {
+		// 		timestamp: new Date,
+		// 		profile_id: 'e316cb9a-TEMP-FAKE-DATA-97829c1925de',
+		// 		id: '343bb963-TEMP-FAKE-DATA-8b562d2f7a4e',
+		// 		account: {
+		// 			id: "a1b2c3d4",
+		// 			balance: "1.100",
+		// 			holds: "0.100",
+		// 			available: "1.00",
+		// 			currency: "USD"
+		// 		},
+		// 		calculations: {
+		// 			sell_now: '12345.67890123',
+		// 			wait_fill: '23456.78901234',
+		// 			fees: '23.67890123',
+		// 		},
+		// 	},
+		// 	coins: {
+		// 		'BTC-USD': {
+		// 			trending_up: undefined,
+		// 			should_buy: undefined,
+		// 			account: {
+		// 				id: "a1b2c3d4",
+		// 				balance: "1.100",
+		// 				hold: "0.100",
+		// 				available: "1.00",
+		// 				currency: "BTC"
+		// 			},
+		// 			calculations: {
+		// 				sell_now: '12345.67890123',
+		// 				wait_fill: '23456.78901234',
+		// 				fees: '23.67890123',
+		// 			},
+		// 		},
+		// 		'ETH-USD': {
+		// 			trending_up: undefined,
+		// 			should_buy: undefined,
+		// 			account: {
+		// 				id: "a1b2c3d4",
+		// 				balance: "1.100",
+		// 				hold: "0.100",
+		// 				available: "1.00",
+		// 				currency: "ETH"
+		// 			},
+		// 			calculations: {
+		// 				sell_now: '12345.67890123',
+		// 				wait_fill: '23456.78901234',
+		// 				fees: '23.67890123',
+		// 			},
+		// 		},
+		// 		'LTC-USD': {
+		// 			trending_up: undefined,
+		// 			should_buy: undefined,
+		// 			account: {
+		// 				id: "a1b2c3d4",
+		// 				balance: "1.100",
+		// 				hold: "0.100",
+		// 				available: "1.00",
+		// 				currency: "LTC"
+		// 			},
+		// 			calculations: {
+		// 				sell_now: '12345.67890123',
+		// 				wait_fill: '23456.78901234',
+		// 				fees: '23.67890123',
+		// 			},
+		// 		},
+		// 	},
+		// };
+
+		this._account = {
+
+		};
+		this._coins = {};
+		this._footer: {};
+
+		settings.get('general.product_ids').forEach((product_id) => {
+			let self = this;
+			
+			this[`_${product_id}`] = {
+				trending_up: undefined,
+				should_buy: undefined,
+			};
+
+			Object.defineProperty(this, product_id, {
+				set: (val) => {
+					log.info(process.pid, 'data coins', product_id, [`_${product_id}`]);
+					
+					let old = this[`_${product_id}`];
+					this[`_${product_id}`] = val;
+					if (!self.objectsAreEqual(old, this[`_${product_id}`])) {
+						terminal.send({
+							action: product_id,
+							data: this[`_${product_id}`],
+							timestamp: new Date,
+						});
+					}
+				},
+				get: (val) => {
+					return this[`_${product_id}`];
+				},
+			});
+		}, this._coins);
 	}
 	set account(val) {
-		this._account = val;
-		console.log('val:', val);
+		let self = this;
+		log.info(process.pid, 'data account', _account);
+
+		let old = self.account;
+		self._account = val;
+		if (!self.objectsAreEqual()) {
+			terminal.send({
+				action: 'account',
+				data: self._account,
+				timestamp: new Date,
+			});
+		}
 	}
 	get account() {
+		return this._account;
+	}
+	set footer (val) {
+		let self = this;
+		log.info(process.pid, 'data footer', _footer);
+			
+		self._footer = val;
+		if (!self.objectsAreEqual()) {
+			terminal.send({
+				action: 'footer',
+				data: self._footer,
+				timestamp: new Date,
+			});
+		}
+	}
+	get footer() {
 		return this._account;
 	}
 }
-
-let data = new Data();
-data.account = 'foo';
-data.account.bar = 'baz';
-
-
-
-var terminal_data = {
-	_account: {},
-	set account(val) {
-		this._account = val;
-		this._account_listener(val);
-	},
-	get account() {
-		return this._account;
-	},
-	_account_listener: function(val) {
-		log.info(process.pid, 'terminal send account', _account);
-		terminal.send({
-			action: 'account',
-			data: this._account,
-			timestamp: new Date,
-		});
-	},
-	coins: {},
-	_footer: {},
-	set footer(val) {
-		this._footer = val;
-		this._footer_listener(val);
-	},
-	get footer() {
-		return this._footer;
-	},
-	_footer_listener: function(val) {
-		log.info(process.pid, 'terminal send footer', _footer);
-		terminal.send({
-			action: 'footer',
-			data: this._footer,
-			timestamp: new Date,
-		});
-	},
-};
-
-settings.get('general.product_ids').forEach(function (product_id) {
-	this[`_${product_id}`] = {
-		trending_up: undefined,
-		should_buy: undefined,
-	};
-	this[`_${product_id}_listener`] = (val) => {
-		log.info(process.pid, 'terminal send', product_id, [`_${product_id}`]);
-		terminal.send({
-			action: product_id,
-			data: this[`_${product_id}`],
-			timestamp: new Date,
-		});
-	};
-
-	Object.defineProperty(this, product_id, {
-		set: (val) => {
-			this[`_${product_id}`] = val;
-			this[`_${product_id}_listener`](val);
-		},
-		get: (val) => {
-			return this[`_${product_id}`];
-		},
-	});
-}, terminal_data.coins;
-
-
 
 
 
@@ -234,27 +187,6 @@ settings.get('general.product_ids').forEach((product_id) => {
 
 	launch_bot(product_id);
 });
-
-
-
-function objectsAreEqual(a, b) {
-	for (var prop in a) {
-		if (a.hasOwnProperty(prop)) {
-			if (b.hasOwnProperty(prop)) {
-				if (typeof a[prop] === 'object') {
-					if (!objectsAreEqual(a[prop], b[prop]))
-						return false;
-				} else {
-					if (a[prop] !== b[prop])
-						return false;
-				}
-			} else {
-				return false;
-			}
-		}
-	}
-	return true;
-}
 
 
 
