@@ -254,7 +254,7 @@ function open_websocket() {
 
 						// cache all the orders that we've received.
 						// Will possibly multiple pages.
-						message.data.forEach((order) => {
+						_.forEach(message.data, (order) => {
 							orders_cache.push(order);
 						});
 
@@ -308,7 +308,7 @@ function open_websocket() {
 							sell_now['total'] = [];
 							wait_fill['total'] = [];
 
-							orders.forEach((order) => {
+							_.forEach(orders, (order) => {
 								// log.debug(process.pid, `getOrders order:`, order);
 								let product_id = order.product_id;
 

@@ -27,7 +27,7 @@ class TrendLines {
 			for (let i=0; i < this.trend_lines.length; i++) {
 				this.trend_lines[i].push(parseFloat(trades[trade].toString()));
 
-				settings.get(`${this.product_id}.strategies.TrendLines.trendlines_n`)
+				settings.get(`${this.product_id}.strategies.TrendLines.trendlines_n`);
 
 				while (this.trend_lines[i].length > this.trades_n[i] + 1)
 					this.trend_lines[i].shift();
@@ -51,10 +51,13 @@ class TrendLines {
 		switch (this.product_id) {
 			case 'BTC-USD':
 				starting_price = Math.random() * 10000;
+				break;
 			case 'ETH-USD':
 				starting_price = Math.random() * 1000;
+				break;
 			case 'LTC-USD':
 				starting_price = Math.random() * 100;
+				break;
 		}
 
 		for (let i = 0; i < count; i++)
@@ -69,7 +72,7 @@ class TrendLines {
 		let strategy = {
 			trendlines_n: settings.get(`${this.product_id}.strategies.TrendLines.trendlines_n`),
 			last_trade_price: this.trend_lines[0][this.trend_lines[0].length - 1],
-		}
+		};
 
 		var is_trending_up = [];
 		var should_buy = [];
@@ -114,7 +117,7 @@ class TrendLines {
 				throw new Error(`The parameter 'set.product_id' is not valid (${set.product_id}); should be one of: ${settings.get('general.product_ids')}.`);
 
 
-			this.product_id = set.product_id
+			this.product_id = set.product_id;
 
 			for (let i=0; i < settings.get(`${this.product_id}.strategies.TrendLines.trendlines_n`); i++) {
 				this.trend_lines[i] = [];
