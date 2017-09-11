@@ -57,6 +57,7 @@ BTC-USD:
       trades_n: 1000
     TrendLines:
       trendlines_n: 2
+      trades_n: 1000
       trend_1_buy_on_up: true
       trend_1_trades_n: 1000
       trend_2_buy_on_up: true
@@ -82,11 +83,13 @@ ETH-USD:
     StdDev:
       trades_n: 1000
     TrendLines:
+      trades_n: 1000
       trendlines_n: 2
       trend_1_buy_on_up: true
       trend_1_trades_n: 1000
       trend_2_buy_on_up: true
       trend_2_trades_n: 100
+
 
 LTC-USD:
   trade_enabled: true
@@ -107,6 +110,7 @@ LTC-USD:
     StdDev:
       trades_n: 1000
     TrendLines:
+      trades_n: 1000
       trendlines_n: 2
       trend_1_buy_on_up: true
       trend_1_trades_n: 1000
