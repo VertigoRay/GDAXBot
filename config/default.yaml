@@ -42,16 +42,16 @@ BTC-USD:
   interval: 1000
   buy:
     amount: 0.01
-    only_when_trend_is_full: true
+    only_when_trend_is_full: false
     post_only: true
     cancel_after: min
-    below_midmarket: 0.01
+    below_midmarket: 0.01   
     spread_n: 3
     spread_v: 0.50
   sell:
     post_only: true
     above_buy: 0.01
-  strategy: StdDev
+  strategy: TrendLines
   strategies:
     StdDev:
       trades_n: 1000
@@ -69,7 +69,7 @@ ETH-USD:
   interval: 1000
   buy:
     amount: 0.01
-    only_when_trend_is_full: true
+    only_when_trend_is_full: false
     post_only: true
     cancel_after: min
     below_midmarket: 0.005
@@ -78,7 +78,7 @@ ETH-USD:
   sell:
     post_only: true
     above_buy: 0.01
-  strategy: StdDev
+  strategy: TrendLines
   strategies:
     StdDev:
       trades_n: 1000
@@ -90,12 +90,13 @@ ETH-USD:
       trend_2_buy_on_up: true
       trend_2_trades_n: 100
 
+
 LTC-USD:
   trade_enabled: true
   interval: 1000
   buy:
     amount: 0.01
-    only_when_trend_is_full: true
+    only_when_trend_is_full: false
     post_only: true
     cancel_after: min
     below_midmarket: 0.001
@@ -104,7 +105,7 @@ LTC-USD:
   sell:
     post_only: true
     above_buy: 0.01
-  strategy: StdDev
+  strategy: TrendLines
   strategies:
     StdDev:
       trades_n: 1000
