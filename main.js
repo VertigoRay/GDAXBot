@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const fs = require('fs');
 const Log = require('log');
 const settings = require('config');
@@ -18,7 +19,7 @@ if (settings.get('general.log')) {
 
 var terminal_data = {
 	account: {
-	// 	timestamp: new Date(),
+	// 	timestamp: new Date,
 	// 	profile_id: 'e316cb9a-TEMP-FAKE-DATA-97829c1925de',
 	// 	id: '343bb963-TEMP-FAKE-DATA-8b562d2f7a4e',
 	// 	account: {
@@ -85,130 +86,6 @@ var terminal_data = {
 		},
 	},
 };
-
-
-
-
-
-
-
-var coins = {};
-
-['USD','EUR'].forEach(product_id => {
-    coins[`${product_id}`] = {};
-    coins[`${product_id}_listener`] = function(val) {
-        console.log(`${product_id} - ${val}`);
-    };
-
-    Object.defineProperty(coins, product_id, {
-        set: function(val) {
-        	console.log(val);
-        	console.log(this[`${product_id}`]);
-
-        	// if (!objectsAreEqual(val, this[`${product_id}`])) {
-	        //     this[`${product_id}`] = val;
-	        //     this[`${product_id}_listener`](val);
-        	// }
-        },
-        get: function() {
-            return this[`${product_id}`];
-        },
-    });
-});
-
-coins.USD = 10;
-coins.EUR = 100;
-console.log(`USD ${coins.USD}, EUR ${coins.EUR}`);
-coins;
-
-
-
-	
-
-class Data {
-	constructor() {
-		this._account = {};
-	}
-	set account(val) {
-		this._account = val;
-		console.log('val:', val);
-	}
-	get account() {
-		return this._account;
-	}
-}
-
-let data = new Data();
-data.account = 'foo';
-data.account.bar = 'baz';
-
-
-
-var terminal_data = {
-	_account: {},
-	set account(val) {
-		this._account = val;
-		this._account_listener(val);
-	},
-	get account() {
-		return this._account;
-	},
-	_account_listener: function(val) {
-		log.info(process.pid, 'terminal send account', _account);
-		terminal.send({
-			action: 'account',
-			data: this._account,
-			timestamp: new Date(),
-		});
-	},
-	coins: {},
-	_footer: {},
-	set footer(val) {
-		this._footer = val;
-		this._footer_listener(val);
-	},
-	get footer() {
-		return this._footer;
-	},
-	_footer_listener: function(val) {
-		log.info(process.pid, 'terminal send footer', _footer);
-		terminal.send({
-			action: 'footer',
-			data: this._footer,
-			timestamp: new Date(),
-		});
-	},
-};
-
-settings.get('general.product_ids').forEach(function (product_id) {
-	this[`_${product_id}`] = {
-		trending_up: undefined,
-		should_buy: undefined,
-	};
-	this[`_${product_id}_listener`] = (val) => {
-		log.info(process.pid, 'terminal send', product_id, [`_${product_id}`]);
-		terminal.send({
-			action: product_id,
-			data: this[`_${product_id}`],
-			timestamp: new Date(),
-		});
-	};
-
-	Object.defineProperty(this, product_id, {
-		set: (val) => {
-			this[`_${product_id}`] = val;
-			this[`_${product_id}_listener`](val);
-		},
-		get: (val) => {
-			return this[`_${product_id}`];
-		},
-	});
-}, terminal_data.coins);
-
-
-
-
-
 var bot = {};
 var getting_orders = false;
 var orders_cache = [];
@@ -233,39 +110,6 @@ settings.get('general.product_ids').forEach((product_id) => {
 	trend_direction_up[product_id] = null;
 
 	launch_bot(product_id);
-});
-
-
-
-function objectsAreEqual(a, b) {
-	for (var prop in a) {
-		if (a.hasOwnProperty(prop)) {
-			if (b.hasOwnProperty(prop)) {
-				if (typeof a[prop] === 'object') {
-					if (!objectsAreEqual(a[prop], b[prop]))
-						return false;
-				} else {
-					if (a[prop] !== b[prop])
-						return false;
-				}
-			} else {
-				return false;
-			}
-		}
-	}
-	return true;
-}
-
-
-
-Object.defineProperty(this, 'terminal', {
-	get: function () { return myVar; },
-	set: function (v) {
-		old = myVar;
-		myVar = v;
-		if (!objectsAreEqual(old, myVar))
-			alert('Value changed! New value: ' + v);
-	}
 });
 
 
@@ -316,7 +160,7 @@ function launch_bot(product_id) {
 					websocket.send({
 						action: 'buy_confirmed',
 						data: progress.data,
-						timestamp: new Date(),
+						timestamp: new Date,
 					});
 
 					break;
@@ -324,7 +168,7 @@ function launch_bot(product_id) {
 					websocket.send({
 						action: 'sell_confirmed',
 						data: progress.data,
-						timestamp: new Date(),
+						timestamp: new Date,
 					});
 
 					break;
@@ -411,7 +255,7 @@ function open_websocket() {
 
 						// cache all the orders that we've received.
 						// Will possibly multiple pages.
-						message.data.forEach((order) => {
+						_.forEach(message.data, (order) => {
 							orders_cache.push(order);
 						});
 
@@ -436,7 +280,7 @@ function open_websocket() {
 							websocket.send({
 								action: 'add_orders',
 								data: orders_cache,
-								timestamp: new Date(),
+								timestamp: new Date,
 							});
 
 							settings.get('general.product_ids').forEach((product_id) => {
@@ -444,7 +288,7 @@ function open_websocket() {
 									action: 'add_orders',
 									product_id: product_id,
 									data: orders_cache,
-									timestamp: new Date(),
+									timestamp: new Date,
 								};
 
 								log.info(process.pid, `${product_id} bot send`, add_orders);
@@ -465,7 +309,7 @@ function open_websocket() {
 							sell_now['total'] = [];
 							wait_fill['total'] = [];
 
-							orders.forEach((order) => {
+							_.forEach(orders, (order) => {
 								// log.debug(process.pid, `getOrders order:`, order);
 								let product_id = order.product_id;
 
@@ -534,7 +378,7 @@ function open_websocket() {
 					bot[progress.data.product_id].send({
 						action: 'sell',
 						data: progress.data,
-						timestamp: new Date(),
+						timestamp: new Date,
 					});
 
 					break;
@@ -554,19 +398,19 @@ open_websocket();
 setInterval(() => {
 	let isOpen = {
 		action: 'isOpen',
-		timestamp: new Date(),
+		timestamp: new Date,
 	};
 	let getBytesReceived = {
 		action: 'getBytesReceived',
-		timestamp: new Date(),
+		timestamp: new Date,
 	};
 	let getLastMatch = {
 		action: 'getLastMatch',
-		timestamp: new Date(),
+		timestamp: new Date,
 	};
 	let getTrades = {
 		action: 'getTrades',
-		timestamp: new Date(),
+		timestamp: new Date,
 	};
 
 	log.info(process.pid, 'websocket send', isOpen);
@@ -597,11 +441,11 @@ setInterval(() => {
 		let add_trades = {
 			action: 'add_trades',
 			data: send_trades[product_id],
-			timestamp: new Date(),
+			timestamp: new Date,
 		};
 		let get = {
 			action: 'get',
-			timestamp: new Date(),
+			timestamp: new Date,
 		};
 
 		log.info(process.pid, `${product_id} bot send`, add_trades);
@@ -627,7 +471,7 @@ setInterval(() => {
 setInterval(() => {
 	let getAccounts = {
 		action: 'getAccounts',
-		timestamp: new Date(),
+		timestamp: new Date,
 	};
 
 	log.info(process.pid, 'websocket send', getAccounts);
@@ -639,7 +483,7 @@ setInterval(() => {
 	{
 		let getOrders = {
 			action: 'getOrders',
-			timestamp: new Date(),
+			timestamp: new Date,
 		};
 
 		log.info(process.pid, 'websocket send', getOrders);
