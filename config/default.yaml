@@ -58,7 +58,6 @@ BTC-USD:
     TrendLines:
       trades_n: 1000
       trendlines_n: 2
-      trades_n: 1000
       trend_1_buy_on_up: true
       trend_1_trades_n: 1000
       trend_2_buy_on_up: true
