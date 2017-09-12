@@ -18,7 +18,7 @@ if (settings.get('general.log')) {
 
 var terminal_data = {
 	account: {
-	// 	timestamp: new Date,
+	// 	timestamp: new Date(),
 	// 	profile_id: 'e316cb9a-TEMP-FAKE-DATA-97829c1925de',
 	// 	id: '343bb963-TEMP-FAKE-DATA-8b562d2f7a4e',
 	// 	account: {
@@ -158,7 +158,7 @@ var terminal_data = {
 		terminal.send({
 			action: 'account',
 			data: this._account,
-			timestamp: new Date,
+			timestamp: new Date(),
 		});
 	},
 	coins: {},
@@ -175,7 +175,7 @@ var terminal_data = {
 		terminal.send({
 			action: 'footer',
 			data: this._footer,
-			timestamp: new Date,
+			timestamp: new Date(),
 		});
 	},
 };
@@ -190,7 +190,7 @@ settings.get('general.product_ids').forEach(function (product_id) {
 		terminal.send({
 			action: product_id,
 			data: this[`_${product_id}`],
-			timestamp: new Date,
+			timestamp: new Date(),
 		});
 	};
 
@@ -203,7 +203,7 @@ settings.get('general.product_ids').forEach(function (product_id) {
 			return this[`_${product_id}`];
 		},
 	});
-}, terminal_data.coins;
+}, terminal_data.coins);
 
 
 
@@ -316,7 +316,7 @@ function launch_bot(product_id) {
 					websocket.send({
 						action: 'buy_confirmed',
 						data: progress.data,
-						timestamp: new Date,
+						timestamp: new Date(),
 					});
 
 					break;
@@ -324,7 +324,7 @@ function launch_bot(product_id) {
 					websocket.send({
 						action: 'sell_confirmed',
 						data: progress.data,
-						timestamp: new Date,
+						timestamp: new Date(),
 					});
 
 					break;
@@ -436,7 +436,7 @@ function open_websocket() {
 							websocket.send({
 								action: 'add_orders',
 								data: orders_cache,
-								timestamp: new Date,
+								timestamp: new Date(),
 							});
 
 							settings.get('general.product_ids').forEach((product_id) => {
@@ -444,7 +444,7 @@ function open_websocket() {
 									action: 'add_orders',
 									product_id: product_id,
 									data: orders_cache,
-									timestamp: new Date,
+									timestamp: new Date(),
 								};
 
 								log.info(process.pid, `${product_id} bot send`, add_orders);
@@ -534,7 +534,7 @@ function open_websocket() {
 					bot[progress.data.product_id].send({
 						action: 'sell',
 						data: progress.data,
-						timestamp: new Date,
+						timestamp: new Date(),
 					});
 
 					break;
@@ -554,19 +554,19 @@ open_websocket();
 setInterval(() => {
 	let isOpen = {
 		action: 'isOpen',
-		timestamp: new Date,
+		timestamp: new Date(),
 	};
 	let getBytesReceived = {
 		action: 'getBytesReceived',
-		timestamp: new Date,
+		timestamp: new Date(),
 	};
 	let getLastMatch = {
 		action: 'getLastMatch',
-		timestamp: new Date,
+		timestamp: new Date(),
 	};
 	let getTrades = {
 		action: 'getTrades',
-		timestamp: new Date,
+		timestamp: new Date(),
 	};
 
 	log.info(process.pid, 'websocket send', isOpen);
@@ -597,11 +597,11 @@ setInterval(() => {
 		let add_trades = {
 			action: 'add_trades',
 			data: send_trades[product_id],
-			timestamp: new Date,
+			timestamp: new Date(),
 		};
 		let get = {
 			action: 'get',
-			timestamp: new Date,
+			timestamp: new Date(),
 		};
 
 		log.info(process.pid, `${product_id} bot send`, add_trades);
@@ -627,7 +627,7 @@ setInterval(() => {
 setInterval(() => {
 	let getAccounts = {
 		action: 'getAccounts',
-		timestamp: new Date,
+		timestamp: new Date(),
 	};
 
 	log.info(process.pid, 'websocket send', getAccounts);
@@ -639,7 +639,7 @@ setInterval(() => {
 	{
 		let getOrders = {
 			action: 'getOrders',
-			timestamp: new Date,
+			timestamp: new Date(),
 		};
 
 		log.info(process.pid, 'websocket send', getOrders);
