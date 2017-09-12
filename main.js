@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const fs = require('fs');
 const Log = require('log');
 const settings = require('config');
@@ -12,7 +13,7 @@ const threads = require('threads');
 if (settings.get('general.log')) {
 	var log = new Log(settings.get('general.log_level'), fs.createWriteStream('GDAX.log'));
 } else {
-	let dev_null = (process.platform === 'win32') ? 'nul' : '/dev/null'
+	let dev_null = (process.platform === 'win32') ? 'nul' : '/dev/null';
 	var log = new Log(settings.get('general.log_level'), fs.createWriteStream(dev_null));
 }
 
