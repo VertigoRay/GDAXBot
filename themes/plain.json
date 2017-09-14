@@ -1,0 +1,137 @@
+{
+	"name": "plain",
+	"author": "natefanaro",
+	"main": {
+		"color": "white",
+		"bgColor": "black"
+	},
+	"header": {
+		"seperator": {
+			"char": "   |   ",
+			"theme" : {
+				"color": "white",
+				"bgColor": "black",
+				"bgTransparency": true
+			}
+		},
+		"container" : {
+			"color": "white",
+			"bgColor": "black",
+			"bgTransparency": true
+		},
+		"title": {
+			"color": "brightwhite",
+			"bgColor": "black",
+			"bgTransparency": true
+		},
+		"label": {
+			"color": "white",
+			"bgColor": "black",
+			"bgTransparency": true
+		},
+		"standard": {
+			"color": "white",
+			"bgColor": "black",
+			"bgTransparency": true
+		}
+	},
+	"account": {
+		"seperator": {
+			"char": "   |   ",
+			"theme" : {
+				"color": "black",
+				"bgColor": "gray",
+				"bgTransparency": true
+			}
+		},
+		"container" : {
+			"color": "black",
+			"bgColor": "gray"
+		},
+		"title": {
+			"color": "black",
+			"bgColor": "gray"
+		},
+		"label": {
+			"color": "black",
+			"bgColor": "gray"
+		},
+		"standard": {
+			"color": "white",
+			"bgColor": "gray"
+		}
+	},
+	"coins": {
+		"container" : {
+			"color": "black",
+			"bgColor": "gray"
+		},
+		"title": {
+			"color": "black",
+			"bgColor": "gray"
+		},
+		"label": {
+			"color": "black",
+			"bgColor": "gray"
+		},
+		"standard": {
+			"color": "white",
+			"bgColor": "gray"
+		},
+		"buying": {
+			"yes": {
+				"color": "green",
+				"bgColor": "gray"
+			},
+			"no": {
+				"color": "white",
+				"bgColor": "red"
+			},
+			"cant": {
+				"color": "brightwhite",
+				"bgColor": "gray"
+			}
+		},
+		"trending": {
+			"up": {
+				"color": "green",
+				"bgColor": "gray"
+			},
+			"down": {
+				"color": "white",
+				"bgColor": "red"
+			}
+		},
+		"price": {
+			"buy": {
+				"color": "white",
+				"bgColor": "red"
+			},
+			"sell": {
+				"color": "green",
+				"bgColor": "gray"
+			}
+		}
+	},
+	"footer": {
+		"seperator": {
+			"char": "   |   ",
+			"theme" : {
+				"color": "white",
+				"bgColor": "gray"
+			}
+		},
+		"container" : {
+			"color": "white",
+			"bgColor": "gray"
+		},
+		"label": {
+			"color": "white",
+			"bgColor": "gray"
+		},
+		"standard": {
+			"color": "white",
+			"bgColor": "gray"
+		}
+	}
+}
