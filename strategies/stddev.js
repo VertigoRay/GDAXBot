@@ -77,7 +77,7 @@ class StdDev {
 		) {
 			this.trending_up = true;
 		} else if (
-			(strategy.diff_price_and_mean > strategy.stddev)
+			(strategy.diff_price_and_mean < strategy.stddev)
 			&& (Math.abs(strategy.diff_price_and_mean) !== strategy.diff_price_and_mean)
 		) {
 			this.trending_up = false; //literally: direction down
