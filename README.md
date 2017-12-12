@@ -73,6 +73,18 @@ Alternatively, you can set the environment for just this one execution:
 NODE_ENV=production npm start
 ```
 
+### Docker
+
+```bash
+sudo docker build -t gdax .
+screen -S gdax
+sudo docker run -it gdax
+```
+Just make sure you don't edit default.yaml and copy default.yaml to production.yaml, input your settings into production.yaml then build with both files!
+
+To detach screen, tap CTRL+A then tap D
+To attach screen input into console: ```bash screen -x gdax```
+
 # Configuring the Bot
 
 The bot *just works* with the default config. It also works fast, making purchase evaluations every second. When you're just starting out, I suggest you pull back the reigns a little bit and set the interval on your trade enabled coins to 5 seconds:
