@@ -283,3 +283,7 @@ Available Strategies:
 That's right, the bot is themable. *Don't like the colors in the default theme?* Copy the default theme, rename it, and [point your config at it](#terminal).
 
 When you're done, upload your theme for others to use.
+
+
+
+![Hackerman](https://i.imgur.com/GVJ06OK.jpg)
