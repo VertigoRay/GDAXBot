@@ -83,7 +83,7 @@ sudo docker run -it gdax
 Just make sure you don't edit default.yaml and copy default.yaml to production.yaml, input your settings into production.yaml then build with both files!
 
 To detach screen, tap CTRL+A then tap D
-To attach screen input into console: ```bash screen -x gdax```
+To attach screen input into console: ```screen -x gdax```
 
 # Configuring the Bot
 
