@@ -17,6 +17,8 @@ if (settings.get('general.log') === "on") {
 	var log = new Log(settings.get('general.log_level'), fs.createWriteStream(dev_null));
 }
 
+var fiat = settings.get("general.fiat");
+
 var terminal_data = {
 	account: {
 	// 	timestamp: new Date,
@@ -227,13 +229,13 @@ function open_websocket() {
 
 
 						message.data.forEach((account) => {
-							if (account.currency === 'USD')
+							if (account.currency === fiat)
 							{
 								terminal_data.account.account = account;
 							}
-							else if (terminal_data.coins[`${account.currency}-USD`])
+							else if (terminal_data.coins[`${account.currency}-${fiat}`])
 							{
-								terminal_data.coins[`${account.currency}-USD`].account = account;
+								terminal_data.coins[`${account.currency}-${fiat}`].account = account;
 							}
 
 							account_ids[account.currency] = account.id;
