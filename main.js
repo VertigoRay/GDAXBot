@@ -50,54 +50,25 @@ var terminal_data = {
             trending_up: undefined,
             should_buy: undefined
         },
-
+		'ETH-BTC': {
+            trending_up: undefined,
+            should_buy: undefined
+        },
+        'LTC-BTC': {
+            trending_up: undefined,
+            should_buy: undefined
+        },
 		'BTC-USD': {
 			trending_up: undefined,
 			should_buy: undefined,
-			// account: {
-			// 	id: "a1b2c3d4",
-			// 	balance: "1.100",
-			// 	hold: "0.100",
-			// 	available: "1.00",
-			// 	currency: "BTC"
-			// },
-			// calculations: {
-			// 	sell_now: '12345.67890123',
-			// 	wait_fill: '23456.78901234',
-			// 	fees: '23.67890123',
-			// },
 		},
 		'ETH-USD': {
 			trending_up: undefined,
 			should_buy: undefined,
-			// account: {
-			// 	id: "a1b2c3d4",
-			// 	balance: "1.100",
-			// 	hold: "0.100",
-			// 	available: "1.00",
-			// 	currency: "ETH"
-			// },
-			// calculations: {
-			// 	sell_now: '12345.67890123',
-			// 	wait_fill: '23456.78901234',
-			// 	fees: '23.67890123',
-			// },
 		},
 		'LTC-USD': {
 			trending_up: undefined,
 			should_buy: undefined,
-			// account: {
-			// 	id: "a1b2c3d4",
-			// 	balance: "1.100",
-			// 	hold: "0.100",
-			// 	available: "1.00",
-			// 	currency: "LTC"
-			// },
-			// calculations: {
-			// 	sell_now: '12345.67890123',
-			// 	wait_fill: '23456.78901234',
-			// 	fees: '23.67890123',
-			// },
 		},
 	},
 };
