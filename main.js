@@ -10,7 +10,7 @@ const sprintf = require('sprintf-js').sprintf;
 const terminal = spawn('./lib/terminal.js');
 const threads = require('threads');
 
-if (settings.get('general.log')) {
+if (settings.get('general.log') === "on") {
 	var log = new Log(settings.get('general.log_level'), fs.createWriteStream('GDAX.log'));
 } else {
 	let dev_null = (process.platform === 'win32') ? 'nul' : '/dev/null';
