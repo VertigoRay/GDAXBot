@@ -347,7 +347,7 @@ function open_websocket() {
 								fees: sell_now_sum * .003,
 							}
 
-							// orders_cache = [];
+							orders_cache = [];
 							getting_orders = false;
 						}
 					} else {
