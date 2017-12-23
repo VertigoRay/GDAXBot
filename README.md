@@ -125,6 +125,7 @@ The `general` section is for bot wide configurations:
 
 ```yaml
 general:
+  fiat: USD
   product_ids:
     - BTC-USD
     - ETH-USD
@@ -140,6 +141,9 @@ general:
   log: off
   log_level: warning
 ```
+
+#### Fiat
+The `fiat` is the current currency you are using in your account, it can be `USD` or `EUR`.
 
 #### Product IDs
 
