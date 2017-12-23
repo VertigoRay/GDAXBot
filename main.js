@@ -36,6 +36,19 @@ var terminal_data = {
 	// 	},
 	},
 	coins: {
+        'BTC-EUR': {
+            trending_up: undefined,
+            should_buy: undefined
+        },
+        'ETH-EUR': {
+            trending_up: undefined,
+            should_buy: undefined
+        },
+        'LTC-EUR': {
+            trending_up: undefined,
+            should_buy: undefined
+        },
+
 		'BTC-USD': {
 			trending_up: undefined,
 			should_buy: undefined,
