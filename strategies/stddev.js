@@ -48,6 +48,12 @@ class StdDev {
 				starting_price = Math.random() * 1000;
 			case 'LTC-USD':
 				starting_price = Math.random() * 100;
+            case 'BTC-EUR':
+                starting_price = Math.random() * 10000;
+            case 'ETH-EUR':
+                starting_price = Math.random() * 1000;
+            case 'LTC-EUR':
+                starting_price = Math.random() * 100;
 		}
 
 		for (let i = 0; i < count; i++) {

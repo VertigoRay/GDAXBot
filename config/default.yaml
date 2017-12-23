@@ -13,6 +13,7 @@
 
 
 general:
+  fiat: USD
   product_ids:
     - BTC-USD
     - ETH-USD
