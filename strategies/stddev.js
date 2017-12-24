@@ -54,7 +54,9 @@ class StdDev {
                 starting_price = Math.random() * 1000;
             case 'LTC-EUR':
                 starting_price = Math.random() * 100;
-		}
+			case 'ETH-BTC':
+                starting_price = Math.random() * 100;
+        }
 
 		for (let i = 0; i < count; i++) {
 			dummy_data.push(parseFloat((Math.floor(Math.random() * 2) ? starting_price + Math.random() * 2 : starting_price + Math.random() * 2)).toFixed(2));

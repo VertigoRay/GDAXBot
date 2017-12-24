@@ -67,6 +67,9 @@ class TrendLines {
             case 'LTC-EUR':
                 starting_price = Math.random() * 100;
                 break;
+            case 'ETH-BTC':
+                starting_price = Math.random() * 100;
+                break;
 		}
 
 		for (let i = 0; i < count; i++)
