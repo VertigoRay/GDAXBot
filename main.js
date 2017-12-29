@@ -10,12 +10,14 @@ const sprintf = require('sprintf-js').sprintf;
 const terminal = spawn('./lib/terminal.js');
 const threads = require('threads');
 
-if (settings.get('general.log')) {
+if (settings.get('general.log') === "on") {
 	var log = new Log(settings.get('general.log_level'), fs.createWriteStream('GDAX.log'));
 } else {
 	let dev_null = (process.platform === 'win32') ? 'nul' : '/dev/null';
 	var log = new Log(settings.get('general.log_level'), fs.createWriteStream(dev_null));
 }
+
+var fiat = settings.get("general.fiat");
 
 var terminal_data = {
 	account: {
@@ -36,53 +38,37 @@ var terminal_data = {
 	// 	},
 	},
 	coins: {
+        'BTC-EUR': {
+            trending_up: undefined,
+            should_buy: undefined
+        },
+        'ETH-EUR': {
+            trending_up: undefined,
+            should_buy: undefined
+        },
+        'LTC-EUR': {
+            trending_up: undefined,
+            should_buy: undefined
+        },
+		'ETH-BTC': {
+            trending_up: undefined,
+            should_buy: undefined
+        },
+        'LTC-BTC': {
+            trending_up: undefined,
+            should_buy: undefined
+        },
 		'BTC-USD': {
 			trending_up: undefined,
 			should_buy: undefined,
-			// account: {
-			// 	id: "a1b2c3d4",
-			// 	balance: "1.100",
-			// 	hold: "0.100",
-			// 	available: "1.00",
-			// 	currency: "BTC"
-			// },
-			// calculations: {
-			// 	sell_now: '12345.67890123',
-			// 	wait_fill: '23456.78901234',
-			// 	fees: '23.67890123',
-			// },
 		},
 		'ETH-USD': {
 			trending_up: undefined,
 			should_buy: undefined,
-			// account: {
-			// 	id: "a1b2c3d4",
-			// 	balance: "1.100",
-			// 	hold: "0.100",
-			// 	available: "1.00",
-			// 	currency: "ETH"
-			// },
-			// calculations: {
-			// 	sell_now: '12345.67890123',
-			// 	wait_fill: '23456.78901234',
-			// 	fees: '23.67890123',
-			// },
 		},
 		'LTC-USD': {
 			trending_up: undefined,
 			should_buy: undefined,
-			// account: {
-			// 	id: "a1b2c3d4",
-			// 	balance: "1.100",
-			// 	hold: "0.100",
-			// 	available: "1.00",
-			// 	currency: "LTC"
-			// },
-			// calculations: {
-			// 	sell_now: '12345.67890123',
-			// 	wait_fill: '23456.78901234',
-			// 	fees: '23.67890123',
-			// },
 		},
 	},
 };
@@ -214,13 +200,13 @@ function open_websocket() {
 
 
 						message.data.forEach((account) => {
-							if (account.currency === 'USD')
+							if (account.currency === fiat)
 							{
 								terminal_data.account.account = account;
 							}
-							else if (terminal_data.coins[`${account.currency}-USD`])
+							else if (terminal_data.coins[`${account.currency}-${fiat}`])
 							{
-								terminal_data.coins[`${account.currency}-USD`].account = account;
+								terminal_data.coins[`${account.currency}-${fiat}`].account = account;
 							}
 
 							account_ids[account.currency] = account.id;
@@ -347,7 +333,7 @@ function open_websocket() {
 								fees: sell_now_sum * .003,
 							}
 
-							// orders_cache = [];
+							orders_cache = [];
 							getting_orders = false;
 						}
 					} else {
